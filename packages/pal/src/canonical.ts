@@ -22,9 +22,8 @@ function sha256Bytes(message: Uint8Array): Uint8Array {
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
   ]);
   const len = message.length;
-  const blocks = ((len + 9 + 63) >> 6) + 0; // hmm: see below
-  const total = ((len + 9 + 63) & ~63) + 64;
-  void blocks;
+  // Smallest multiple of 64 that fits len + 1 (0x80 byte) + 8 (bit-length word).
+  const total = ((len + 9 + 63) >> 6) * 64;
   const buf = new Uint8Array(total);
   buf.set(message);
   buf[len] = 0x80;
@@ -65,10 +64,10 @@ function sha256Bytes(message: Uint8Array): Uint8Array {
     H[7] = (H[7]! + h) >>> 0;
   }
   const out = new Uint8Array(32);
+  const outView = new DataView(out.buffer);
   for (let i = 0; i < 8; i += 1) {
-    view.setUint32(i * 4, H[i]!);
+    outView.setUint32(i * 4, H[i]!);
   }
-  out.set(buf.subarray(0, 32));
   return out;
 }
 
