@@ -41,8 +41,7 @@ $$;
 DO $$
 DECLARE v_id uuid; v_replay uuid; v_lines jsonb;
 BEGIN
-  v_lines := '[{"account_code":"PAYER_SIM_CLEARING","side":"debit","amount_minor":"1000"},'
-             ||'{"account_code":"SIM_INTERNAL_CLEARING","side":"credit","amount_minor":"1000"}]'::jsonb;
+  v_lines := '[{"account_code":"PAYER_SIM_CLEARING","side":"debit","amount_minor":"1000"},{"account_code":"SIM_INTERNAL_CLEARING","side":"credit","amount_minor":"1000"}]'::jsonb;
   v_id := app_private.post_balanced_journal('XTS','ci-smoke','ci-ref-1','smoke',
     extensions.digest('ci-journal-key-1','sha256'), v_lines);
   IF v_id IS NULL THEN RAISE EXCEPTION 'smoke: journal posting returned no id'; END IF;
@@ -61,8 +60,7 @@ BEGIN
   BEGIN
     PERFORM app_private.post_balanced_journal('XTS','ci-smoke','ci-ref-2','smoke',
       extensions.digest('ci-journal-key-2','sha256'),
-      '[{"account_code":"A","side":"debit","amount_minor":"1000"},'
-      ||'{"account_code":"B","side":"credit","amount_minor":"900"}]'::jsonb);
+      '[{"account_code":"A","side":"debit","amount_minor":"1000"},{"account_code":"B","side":"credit","amount_minor":"900"}]'::jsonb);
     v_conflict := true;
   EXCEPTION WHEN OTHERS THEN NULL;
   END;
