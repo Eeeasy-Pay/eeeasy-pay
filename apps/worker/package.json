@@ -1,0 +1,23 @@
+{
+  "name": "@eeeasy-pay/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "test": "echo 'worker: implemented in TICKET-005' && exit 0"
+  },
+  "dependencies": {
+    "@eeeasy-pay/domain": "workspace:*",
+    "@eeeasy-pay/pal": "workspace:*",
+    "@eeeasy-pay/ports": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0"
+  }
+}
