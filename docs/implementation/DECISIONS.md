@@ -7,10 +7,11 @@
 - **ADR-002 Private repository.** The repository must be private (pre-launch fintech work).
   Revised from an initially proposed public repo. NOTE: the repository currently exists as a
   public org repo; flipping it to private is a pending owner action (B-09). Record here once done.
-- **ADR-003 Toolchain pins are CI-proposed until the first green CI run.** Node 22,
-  pnpm 10.12.1, turbo ^2.5.0, vitest ^3.2.0, TypeScript ^5.8.0. CI installs with
-  `pnpm install --no-frozen-lockfile` until a lockfile is committed (TICKET-008). No silent
-  upgrades; update pins only with a green run as evidence.
+- **ADR-003 Toolchain pins.** Node 22, pnpm 10.12.1, turbo ^2.5.0, vitest ^3.2.0,
+  TypeScript ^5.8.0. CI installs with `pnpm install --no-frozen-lockfile` until a lockfile
+  is committed (TICKET-008). VERIFIED 2026-10-08 by the first fully green CI run
+  (PR #1 / Actions run `37836984589`): build-test and migrations jobs both passed.
+  No silent upgrades; future pin changes again require a green run as evidence.
 - **ADR-004 Money is exact integer minor units (bigint).** `packages/domain/money.ts`
   enforces positive-only principal, non-negative fees, currency-consistent arithmetic, an
   overflow headroom bound, and a fee sanity bound. Never binary floating point.

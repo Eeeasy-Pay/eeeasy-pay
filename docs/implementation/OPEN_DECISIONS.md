@@ -34,9 +34,13 @@
   created rather than adopting an unrelated structure.
 - **D-02 Exact minor-unit bigint money** in `packages/domain`; no floats anywhere in
   money paths.
-- **D-03 Toolchain pins are CI-proposed, not yet verified:** Node 22 (`.nvmrc`),
-  pnpm 10.12.1 (`packageManager`), turbo ^2.5.0, vitest ^3.2.0, TypeScript ^5.8.0,
-  @types/node ^22.15.0. They become "verified" only after the first green CI run (ADR-003).
+- **D-03 Toolchain pins verified by the first fully green CI run** (PR #1, Actions run
+  `37836984589`, 2026-10-08): Node 22 (`.nvmrc`), pnpm 10.12.1 (`packageManager`),
+  turbo ^2.5.0, vitest ^3.2.0, TypeScript ^5.8.0. Both jobs green: `build-test`
+  (install, typecheck, unit tests, build, secret scan) and `migrations` (auth fixture,
+  six migrations in order, smoke assertions, all RLS/grant probes) on Postgres 16.
+  Install still uses `pnpm install --no-frozen-lockfile` until a lockfile is committed
+  (TICKET-008). Future pin changes again require a green run as evidence (ADR-003).
 - **D-04 Quote expiry enforced at command time only** (see migration 0003
   `confirm_payment_intent` and 0005 command-time checks). Read-only status projections may
   report expiry. No DB timer trigger, duplicate column, enum, or timer worker.
