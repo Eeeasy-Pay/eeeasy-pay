@@ -6,10 +6,10 @@
   buildable.
 - **ADR-002 Private repository.** The repository must be private (pre-launch fintech work).
   Revised from an initially proposed public repo. NOTE: the repository currently exists as a
-  public org repo; flipping it to private is a pending owner action (B-09). Record here once done.
+  public org repo; flipping it to a private is a pending owner action (B-09). Record here once done.
 - **ADR-003 Toolchain pins.** Node 22, pnpm 10.12.1, turbo ^2.5.0, vitest ^3.2.0,
-  TypeScript ^5.8.0. CI installs with `pnpm install --no-frozen-lockfile` until a lockfile
-  is committed (TICKET-008). VERIFIED 2026-10-08 by the first fully green CI run
+  TypeScript ^5.8.0. CI installs with `pnpm install --no-frozen-lockfile` until a lockfile is
+  committed (TICKET-008). VERIFIED 2026-10-08 by the first fully green CI run
   (PR #1 / Actions run `37836984589`): build-test and migrations jobs both passed.
   No silent upgrades; future pin changes again require a green run as evidence.
 - **ADR-004 Money is exact integer minor units (bigint).** `packages/domain/money.ts`
@@ -41,3 +41,24 @@
   not sufficient evidence that they work. The defect was fixed by ADDING migration
   `202610060006` (CREATE OR REPLACE with the corrected clause order) rather than editing
   the reviewed 0001-0005 set, preserving byte-exact provenance and the immutability rule.
+- **ADR-010 Operating model: organization = intended technical Scheme/Hub Operator.**
+  Rebaseline recorded 2026-10-08 from the PRD v1.2 packet dated 9 October 2026 (dated
+  working assumptions, not legal findings). Supersedes the earlier 'product layer behind
+  an external sponsoring-DFSP operator' framing for design/build. Target split: the
+  organization owns, deploys, secures, and operates the central Hub infrastructure and
+  executes central technical functions only under documented scheme rules and delegation;
+  the sponsor DFSP retains settlement and risk accountability (policy, participant
+  funding/liquidity, customer-account servicing) under the intended arrangement; a
+  settlement partner performs external settlement-account movement and acknowledgements;
+  the P2P/A2A app is a scheme product with no stored balance. Sudan/SDG and
+  sponsor-license coverage are dated design/build assumptions only. Formal operator
+  designation, sponsor/scheme agreements, jurisdictional legal validation, and the exact
+  app route remain launch gates, not coding blockers (see D-08, B-01, B-10).
+- **ADR-011 Operator workstream: chart-first Hub deployment.** The central Hub
+  deployment unit is the official `mojaloop/mojaloop` umbrella Helm chart (v17.2.0
+  test/reproducibility reference only), staged under `infra/mojaloop/` with a
+  project-owned release manifest recording chart/dependency/image pins, checksums, and
+  render evidence. Do not vendor Mojaloop source repositories as packages; do not deploy
+  the DFSP SDK Scheme Adapter centrally; the Third Party overlay is conditional and off
+  by default. No render/install claim may be made until a disposable cluster and Helm
+  are actually available and exercised (B-10, TICKET-009/010).

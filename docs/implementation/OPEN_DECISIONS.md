@@ -2,15 +2,20 @@
 
 ## Blockers (prevent partner integration / real-money use)
 
-- **B-01 Sponsor DFSP contract unknown.** No signed scheme/partner profile exists: no
-  endpoint, transport, signature/JWS or mTLS profile, callback schema, exact FSPIOP resource
-  version, fee schedule, currency set, alias policy, account-link flow, or latency
-  commitment. Everything partner-specific stays behind `packages/ports` +
-  simulator until this exists.
-- **B-02 No live scheme integration.** No live Mojaloop / SDK Scheme Adapter integration.
-  Mojaloop Helm chart v17.2.0 is a test/reproducibility reference only. It has NOT been
-  rendered or verified in this repository (no local Helm was available); do not claim a
-  verified component set.
+- **B-01 Sponsor DFSP contract unknown.** Under the rebaselined model (D-08) the
+  sponsoring/licensed DFSP provides sponsorship and national-switch access and is
+  intended to carry settlement and risk accountability under the arranged model. No
+  signed scheme/partner profile exists: no endpoint, transport, signature/JWS or mTLS
+  profile, callback schema, exact FSPIOP resource version, fee schedule, currency set,
+  alias policy, account-link flow, or latency commitment. Everything partner-specific
+  stays behind `packages/ports` + simulator until this exists.
+- **B-02 No live scheme integration; Hub chart never rendered.** No live Mojaloop / SDK
+  Scheme Adapter integration. The organization is the intended technical Scheme/Hub
+  Operator (D-08); the first operator workstream stages the official `mojaloop/mojaloop`
+  umbrella chart under `infra/mojaloop/` (D-09, TICKET-009/010). Mojaloop Helm chart
+  v17.2.0 remains a test/reproducibility reference only. It has NOT been rendered or
+  verified in this repository (no local Helm/cluster available — see B-10); do not
+  claim a verified component set.
 - **B-03 Refunds deferred.** Authority, evidence, accounting, timing, and error behavior are
   undefined until the partner flow and decision D-12 exist. No refund code.
 - **B-04 Contact discovery off.** Address-book upload and discovery are out of scope. No
@@ -23,10 +28,16 @@
   `not_applicable` in the simulator; the reconciliation mapping needs the partner contract.
 - **B-08 Currency/fee placeholders.** Currency codes and simulator fees are placeholders
   pending the partner profile; the fee sanity bound in `packages/domain` is a guard, not a
-  fee schedule.
+  fee schedule. Sudan/SDG is the dated simulator default configuration assumption (D-08),
+  never a hard-coded currency fact.
 - **B-09 Repository visibility.** The repository is currently **public**. Decision D-05 is
   private. Owner must flip it to private (Settings -> General -> Danger Zone -> Change
   visibility) before any further material lands.
+- **B-10 No disposable Kubernetes/Helm environment.** No Helm CLI, kubectl, or isolated
+  test cluster is available in the current tooling. The umbrella chart cannot be pulled,
+  linted, rendered, or test-installed here. Report this truthfully; never claim a render
+  or deployment. Choosing a cloud provider / cluster for the disposable test Hub is an
+  ADR-gated owner decision.
 
 ## Decisions
 
@@ -58,3 +69,35 @@
   change, grants restated identically) per ADR-009. Reviewed migrations 0001-0005 remain
   byte-exact to the reviewed source. Consequence: reviewed SQL must be executed, not just
   read, before any of it is trusted; CI now exercises the reviewed functions.
+- **D-08 Operating-model rebaseline — dated working assumptions (9 October 2026,
+  owner-provided; NOT verified legal, regulatory, or market facts).** The organization is
+  the intended technical Scheme/Hub Operator and will own, deploy, and operate the
+  complete central Mojaloop Hub infrastructure. The sponsoring/licensed DFSP supplies
+  sponsorship and national-switch access and retains settlement and risk accountability
+  under the intended arrangement; a settlement partner executes external
+  settlement-account movement and acknowledgements. The P2P/A2A app is a scheme product,
+  not the Hub. Working assumptions for design/build: the sponsoring bank's
+  license/sponsorship covers the currently scoped app features; Sudan/SDG is the initial
+  market/currency and the simulator default (configuration-controlled, never hard-coded).
+  Formal operator designation, sponsor/scheme agreements, jurisdiction-specific legal
+  validation, the exact app route (Mojaloop Third Party API/PISP vs the sponsor's
+  approved channel — packet decision D-15), and participant contracts remain
+  pre-production/live-launch gates. They do NOT block simulator, domain, API, UI,
+  non-production IaC, or adapter-boundary work. No live credentials, live bank/switch
+  integration, real-money activity, or public launch is authorized by these assumptions.
+  Source: PRD v1.2 packet dated 9 October 2026 (owner-uploaded to the project library).
+- **D-09 Chart-first central Hub deployment unit.** The deployable central Hub unit is
+  the official `mojaloop/mojaloop` umbrella Helm chart — never five service repositories
+  cloned or vendored into the monorepo. Chart references, non-secret values,
+  release-evidence helpers, and operator IaC live under `infra/mojaloop/`; product code
+  stays in `apps/`/`packages/`; the DFSP SDK Scheme Adapter / core connector stays in the
+  DFSP trust zone and is never deployed centrally (the central ML-API-Adapter is a
+  different Hub-side component). v17.2.0 is a test/reproducibility reference only:
+  chart, subchart, and image versions are independently versioned and must be pinned
+  separately in the project-owned release manifest
+  (`infra/mojaloop/release/chart-artifact.lock.yaml` — not Helm's Chart.lock). The
+  Third Party overlay (`thirdparty.enabled` plus the two ALS extended-PartyIdType flags)
+  is conditional, off by default, and only for an isolated synthetic PISP-path trial.
+  `example-mojaloop-backend` and inline dependency manifests are PoC/dev/test only,
+  never production guidance. Every Helm command must name a chart; if Helm is missing,
+  say so and do not claim a render (B-10).

@@ -41,3 +41,31 @@ Workflow for every ticket:
   `--frozen-lockfile`, add an issue/PR templates if useful, and record all executed
   commands and results in `docs/implementation/TEST_EVIDENCE.md`. Also: flip repository to
   private (B-09) and close D-05/ADR-002.
+
+## Operator workstream (PRD v1.2 rebaseline, D-08/D-09)
+
+- **TICKET-009 Operator infra bootstrap (`infra/mojaloop/`).** Create the operator-owned
+  central Hub deployment skeleton per the packet's Mojaloop module guide: README with the
+  safe dev/test add/pull/verify/render/install/teardown procedure,
+  `release/chart-artifact.lock.yaml` (project-owned manifest schema, values pending until
+  a real pull), `values/dev-reference.yaml` (placeholder-safe; derive only from actually
+  inspected v17.2.0 values), `scripts/` lint/render/evidence helpers that fail loudly and
+  truthfully when Helm is missing, and an ignored `.artifacts/` area. Acceptance: CI green;
+  no chart archive vendored; no secrets; no production claims; scripts honestly report
+  missing tooling.
+- **TICKET-010 Hub chart pull/render verification (BLOCKED on B-10 environment).** When a
+  disposable cluster and Helm are available: `helm repo add mojaloop
+  https://mojaloop.io/helm/repo/`, pull `mojaloop/mojaloop --version 17.2.0`, record
+  SHA-256, lint, template with reviewed values, and fill the release manifest with the
+  complete rendered workload/image/dependency inventory plus Helm/Kubernetes versions and
+  compatibility caveats. Acceptance: real checksums and inventory committed as evidence;
+  no compatibility claims beyond what was actually tested; disposable/synthetic test
+  environment only.
+- **TICKET-011 Synthetic account-link & alias flows.** Extend domain/ports/simulator for
+  references to existing external bank/wallet accounts: account-link state machine
+  (pending -> verified -> active, consent-gated), user-selected default send/receive
+  accounts (step-up + audited changes, one active default per currency), and
+  phone-alias / QR / shareable request-link previews (a preview is never authorization).
+  Synthetic data only; no stored balance; nothing hard-coded from the Sudan/SDG
+  assumption. Acceptance: tests cover default-account invariants, link eligibility at
+  intent creation and confirmation, and preview-is-not-authorization.
