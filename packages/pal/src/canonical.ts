@@ -1,5 +1,6 @@
 // Canonicalization and deterministic digests for the Payment Authorization Layer.
-// No Node built-ins: a compact pure-JS SHA-256 keeps this package portable and reviewable.
+// No Node or DOM built-ins: a compact pure-JS SHA-256 keeps this package portable, typed under
+// ES2022-only libs, and reviewable.
 
 // SHA-256 round constants (FIPS 180-4).
 const K = [
@@ -16,6 +17,24 @@ const K = [
 const rotr = (x: number, n: number): number => ((x >>> n) | (x << (32 - n))) >>> 0;
 
 const HEX = '0123456789abcdef';
+
+/** Minimal UTF-8 encoder (code-point correct, including surrogate pairs). */
+function utf8Bytes(input: string): Uint8Array {
+  const out: number[] = [];
+  for (const ch of input) {
+    const cp = ch.codePointAt(0)!;
+    if (cp < 0x80) {
+      out.push(cp);
+    } else if (cp < 0x800) {
+      out.push(0xc0 | (cp >> 6), 0x80 | (cp & 0x3f));
+    } else if (cp < 0x10000) {
+      out.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+    } else {
+      out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+    }
+  }
+  return Uint8Array.from(out);
+}
 
 function sha256Bytes(message: Uint8Array): Uint8Array {
   const H = new Uint32Array([
@@ -71,10 +90,9 @@ function sha256Bytes(message: Uint8Array): Uint8Array {
   return out;
 }
 
-/** SHA-256 hex digest of a UTF-8 string. */
+/** SHA-256 hex digest of a UTF-8 string (verified against FIPS test vectors). */
 export function sha256Hex(input: string): string {
-  const bytes = new TextEncoder().encode(input);
-  const digest = sha256Bytes(bytes);
+  const digest = sha256Bytes(utf8Bytes(input));
   let hex = '';
   for (const b of digest) {
     hex += HEX[(b >>> 4) & 0xf]! + HEX[b & 0xf]!;
