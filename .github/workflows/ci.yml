@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Typecheck
+        run: pnpm run typecheck
+      - name: Unit tests
+        run: pnpm run test
+      - name: Build
+        run: pnpm run build
+      - name: Secret scan
+        run: bash ci/secret-scan.sh
+
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: eeeasy_pay
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: eeeasy_pay
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare synthetic auth schema and roles (CI-only fixture)
+        run: psql -v ON_ERROR_STOP=1 -f ci/db/prepare.sql
+      - name: Apply migrations in order
+        run: |
+          set -euo pipefail
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "applying $f"
+            psql -v ON_ERROR_STOP=1 -f "$f"
+          done
+      - name: Smoke assertions (schema, balanced journal, outbox lease, inbox dedupe)
+        run: psql -v ON_ERROR_STOP=1 -f ci/db/smoke.sql
+      - name: RLS and grant probes
+        run: |
+          set -euo pipefail
+          # 1) anon must be DENIED on payment_intents (no grants).
+          if psql -v ON_ERROR_STOP=1 -c "SET ROLE anon; SELECT count(*) FROM public.payment_intents;" >/dev/null 2>&1; then
+            echo "FAIL: anon could query public.payment_intents"; exit 1
+          else
+            echo "ok: anon denied on public.payment_intents"
+          fi
+          # 2) anon must be DENIED on app_private functions (no schema usage).
+          if psql -v ON_ERROR_STOP=1 -c "SET ROLE anon; SELECT app_private.claim_outbox('probe', 1, 5);" >/dev/null 2>&1; then
+            echo "FAIL: anon could call app_private.claim_outbox"; exit 1
+          else
+            echo "ok: anon denied on app_private.claim_outbox"
+          fi
+          # 3) authenticated can read granted columns through RLS (zero rows without a jwt claim).
+          psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT count(*) FROM public.payment_intents;"
+          echo "ok: authenticated reads public.payment_intents through RLS"
+          # 4) authenticated must be DENIED on columns not granted to it.
+          if psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT request_fingerprint FROM public.payment_intents;" >/dev/null 2>&1; then
+            echo "FAIL: authenticated could read ungranted column request_fingerprint"; exit 1
+          else
+            echo "ok: authenticated denied on ungranted column"
+          fi
+          # 5) authenticated can call the split-membership predicate (returns false without a claim).
+          psql -v ON_ERROR_STOP=1 -t -c "SET ROLE authenticated; SELECT app_private.can_read_split_bill(NULL::uuid);"
+          echo "ok: authenticated can call app_private.can_read_split_bill"
