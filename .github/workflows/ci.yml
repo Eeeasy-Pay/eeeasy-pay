@@ -53,16 +53,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Prepare synthetic auth schema and roles (CI-only fixture)
-        run: psql -v ON_ERROR_STOP=1 -f ci/db/prepare.sql
+        run: |
+          set -o pipefail
+          psql -v ON_ERROR_STOP=1 -f ci/db/prepare.sql 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Apply migrations in order
         run: |
           set -euo pipefail
           for f in $(ls supabase/migrations/*.sql | sort); do
             echo "applying $f"
-            psql -v ON_ERROR_STOP=1 -f "$f"
+            if ! psql -v ON_ERROR_STOP=1 -f "$f" > /tmp/migration.log 2>&1; then
+              echo "::error title=Migration failed::$(basename "$f"): $(tail -c 300 /tmp/migration.log | tr '\n' ' ')"
+              tail -c 2000 /tmp/migration.log >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
           done
+          echo "All migrations applied in order." >> "$GITHUB_STEP_SUMMARY"
       - name: Smoke assertions (schema, balanced journal, outbox lease, inbox dedupe)
-        run: psql -v ON_ERROR_STOP=1 -f ci/db/smoke.sql
+        run: |
+          set -o pipefail
+          if ! psql -v ON_ERROR_STOP=1 -f ci/db/smoke.sql > /tmp/smoke.log 2>&1; then
+            echo "::error title=Smoke SQL failed::$(tail -c 400 /tmp/smoke.log | tr '\n' ' ')"
+            cat /tmp/smoke.log >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "smoke.sql: all assertions passed" >> "$GITHUB_STEP_SUMMARY"
       - name: RLS and grant probes
         run: |
           set -euo pipefail
@@ -79,7 +93,10 @@ jobs:
             echo "ok: anon denied on app_private.claim_outbox"
           fi
           # 3) authenticated can read granted columns through RLS (zero rows without a jwt claim).
-          psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT count(payment_intent_id) FROM public.payment_intents;"
+          if ! psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT count(payment_intent_id) FROM public.payment_intents;" > /tmp/probe3.log 2>&1; then
+            echo "::error title=Probe 3 failed::$(tail -c 300 /tmp/probe3.log | tr '\n' ' ')"
+            exit 1
+          fi
           echo "ok: authenticated reads public.payment_intents through RLS"
           # 4) authenticated must be DENIED on columns not granted to it.
           if psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT request_fingerprint FROM public.payment_intents;" >/dev/null 2>&1; then
@@ -88,5 +105,9 @@ jobs:
             echo "ok: authenticated denied on ungranted column"
           fi
           # 5) authenticated can call the split-membership predicate (returns false without a claim).
-          psql -v ON_ERROR_STOP=1 -t -c "SET ROLE authenticated; SELECT app_private.can_read_split_bill(NULL::uuid);"
+          if ! psql -v ON_ERROR_STOP=1 -t -c "SET ROLE authenticated; SELECT app_private.can_read_split_bill(NULL::uuid);" > /tmp/probe5.log 2>&1; then
+            echo "::error title=Probe 5 failed::$(tail -c 300 /tmp/probe5.log | tr '\n' ' ')"
+            exit 1
+          fi
           echo "ok: authenticated can call app_private.can_read_split_bill"
+          echo "All RLS and grant probes passed." >> "$GITHUB_STEP_SUMMARY"
