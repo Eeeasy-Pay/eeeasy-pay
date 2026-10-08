@@ -1,41 +1,39 @@
-# Local setup
+# Local setup (disposable environments only)
 
-## Prerequisites
+> This repository is a simulator-only product foundation. Nothing here connects to a real
+> bank, DFSP, or Mojaloop switch, and no step may be run against a real environment.
 
-- Node 22 (`.nvmrc`) and pnpm 10.12.1 (`corepack enable`).
-- Docker (or any disposable local Postgres 16) for database work.
-- Versions are CI-proposed until the first green CI run (ADR-003).
+## Requirements
 
-## Install and verify
+- Node 22 (`.nvmrc`), pnpm 10.12.1 (`packageManager`), no lockfile committed yet (TICKET-008).
+- A disposable Postgres 16 (or Supabase local) for migration checks. Never use a real database.
 
-```bash
-pnpm install --no-frozen-lockfile   # becomes --frozen-lockfile in TICKET-008
+## Install / verify
+
+```
+pnpm install --no-frozen-lockfile
 pnpm run typecheck
 pnpm run test
-pnpm run secret-scan
+pnpm run build
+bash ci/secret-scan.sh
 ```
 
-## Disposable local database
+## Database migration check (disposable DB only)
 
-```bash
-docker run --name eeeasy-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=eeeasy_pay \
-  -p 5432:5432 -d postgres:16
-
-psql "postgresql://postgres:postgres@127.0.0.1:5432/eeeasy_pay" -f ci/db/prepare.sql
-for f in $(ls supabase/migrations/*.sql | sort); do
-  psql "postgresql://postgres:postgres@127.0.0.1:5432/eeeasy_pay" -v ON_ERROR_STOP=1 -f "$f"
-done
-psql "postgresql://postgres:postgres@127.0.0.1:5432/eeeasy_pay" -v ON_ERROR_STOP=1 -f ci/db/smoke.sql
+```
+psql -v ON_ERROR_STOP=1 -f ci/db/prepare.sql        # CI-only auth schema/roles fixture
+for f in $(ls supabase/migrations/*.sql | sort); do psql -v ON_ERROR_STOP=1 -f "$f"; done
+psql -v ON_ERROR_STOP=1 -f ci/db/smoke.sql          # schema + invariants assertions
 ```
 
-`prepare.sql` synthesizes the `auth` schema/roles that Supabase provides in managed
-environments. It is for disposable local/CI databases ONLY. Never run migrations or
-`prepare.sql` against any shared or real environment, and never use real customer or
-partner data (`GUARDRAILS.md` #5, #6).
+## CI failures are diagnosable from the run page
 
-## What exists now vs what is next
+The `migrations` job runs psql with `ON_ERROR_STOP`. On failure the exact SQL error is
+printed as a workflow **annotation** on the run page and appended to the job **summary**,
+so a failed migration or smoke assertion can be diagnosed without downloading logs.
+``` pages: Actions -> failing run -> Annotations / Summary. ```
 
-Implemented: domain money/state/split logic with tests, PAL fingerprints and expiry
-projection with tests, typed ports, deterministic sponsor-DFSP simulator with tests,
-reviewed migrations 0001-0005, CI (typecheck/test/migrations/secret-scan).
-Placeholder: apps/api (TICKET-003), apps/worker (TICKET-005), persistence (TICKET-004).
+## Toolchain status
+
+Pins (Node 22 / pnpm 10.12.1 / turbo ^2.5 / vitest ^3.2 / TS ^5.8) become *verified* only
+against green CI evidence; see `docs/implementation/DECISIONS.md` (ADR-003).
