@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { CompletionEvidence } from './state.ts';
 import {
-  CompletionEvidence,
   EvidenceError,
   StateError,
   assertCompletable,
@@ -8,12 +8,12 @@ import {
   isTerminal,
 } from './state.ts';
 
-const simEvidence = (overides: Partial<CompletionEvidence> = {}): CompletionEvidence => ({
+const simEvidence = (overrides: Partial<CompletionEvidence> = {}): CompletionEvidence => ({
   source: 'SIMULATOR',
   recipientCreditState: 'credited',
   reference: 'sim-ref-1',
   recordedAt: '2026-10-08T00:00:00.000Z',
-  ...overides,
+  ...overrides,
 });
 
 describe('transition legality', () => {
