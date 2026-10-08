@@ -103,17 +103,17 @@ DO $$
 DECLARE v_a uuid; v_b uuid; v_conflict boolean := false;
 BEGIN
   v_a := app_private.ingest_provider_event('sim-dfsp','ci-evt-1',
-    extensions.digest('ci-inbox-payload-1','sha256'), 1, NULL, NULL, 'sim-hmac',
+    extensions.digest('ci-inbox-payload-1','sha256'), 1::smallint, NULL, NULL, 'sim-hmac',
     '{"k":"v"}'::jsonb);
   v_b := app_private.ingest_provider_event('sim-dfsp','ci-evt-1',
-    extensions.digest('ci-inbox-payload-1','sha256'), 1, NULL, NULL, 'sim-hmac',
+    extensions.digest('ci-inbox-payload-1','sha256'), 1::smallint, NULL, NULL, 'sim-hmac',
     '{"k":"v"}'::jsonb);
   IF v_a IS NULL OR v_b IS DISTINCT FROM v_a THEN
     RAISE EXCEPTION 'smoke: duplicate inbox event created a second row';
   END IF;
   BEGIN
     PERFORM app_private.ingest_provider_event('sim-dfsp','ci-evt-1',
-      extensions.digest('ci-inbox-payload-2','sha256'), 1, NULL, NULL, 'sim-hmac',
+      extensions.digest('ci-inbox-payload-2','sha256'), 1::smallint, NULL, NULL, 'sim-hmac',
       '{"k":"v"}'::jsonb);
     v_conflict := true;
   EXCEPTION WHEN OTHERS THEN NULL;
