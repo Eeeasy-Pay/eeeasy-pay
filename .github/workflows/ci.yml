@@ -79,7 +79,7 @@ jobs:
             echo "ok: anon denied on app_private.claim_outbox"
           fi
           # 3) authenticated can read granted columns through RLS (zero rows without a jwt claim).
-          psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT count(*) FROM public.payment_intents;"
+          psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT count(payment_intent_id) FROM public.payment_intents;"
           echo "ok: authenticated reads public.payment_intents through RLS"
           # 4) authenticated must be DENIED on columns not granted to it.
           if psql -v ON_ERROR_STOP=1 -c "SET ROLE authenticated; SELECT request_fingerprint FROM public.payment_intents;" >/dev/null 2>&1; then

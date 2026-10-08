@@ -33,3 +33,10 @@
   implementation is the deterministic simulator in `packages/sponsor-dfsp-connector`.
   The real adapter is a named TODO blocked on B-01. No FSPIOP signing, JWS/mTLS, or partner
   claims of any kind.
+
+- **ADR-009 Forward-only function-body fix migration.** CI execution proved reviewed
+  migration 0003 shipped `claim_outbox` with an unparseable CTE (`FOR UPDATE SKIP LOCKED`
+  before `LIMIT`). Because plpgsql bodies compile at first call, applying migrations is
+  not sufficient evidence that they work. The defect was fixed by ADDING migration
+  `202610060006` (CREATE OR REPLACE with the corrected clause order) rather than editing
+  the reviewed 0001-0005 set, preserving byte-exact provenance and the immutability rule.

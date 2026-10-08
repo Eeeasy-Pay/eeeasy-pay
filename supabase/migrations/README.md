@@ -22,6 +22,12 @@
      the reviewed design source, but its grants, tests, and ordering must be independently
      reviewed before being treated as applied anywhere beyond a disposable local database.
 
+  6. `202610060006_fix_claim_outbox_lock_clause_order.sql` - forward-only defect fix: the
+     reviewed `claim_outbox` body placed `FOR UPDATE SKIP LOCKED` before `LIMIT` in its
+     picking CTE, which PostgreSQL rejects when the function is first executed (plpgsql
+     bodies parse lazily, so migration 0003 still applied). Signature, lease contract,
+     validation, and grants are unchanged. See ADR-009 / D-07.
+
 - These migrations create **product-side data only**. They are never a bank ledger, DFSP
   customer-account record, Mojaloop participant transfer record, or settlement evidence.
 - `ci/db/prepare.sql` synthesizes the `auth` schema/roles that Supabase normally provides.

@@ -45,3 +45,12 @@
 - **D-06 Coding-agent workflow.** Tickets in `TICKETS.md` are implemented by the supervised
   coding agent via PRs; CI is the objective gate; the supervising engineer reviews PRs.
   No direct pushes to `main` by the agent.
+
+- **D-07 Defect in reviewed migration 0003, fixed forward-only in 0006.**
+  `app_private.claim_outbox` placed `FOR UPDATE SKIP LOCKED` before `LIMIT` inside its
+  picking CTE. PostgreSQL requires `LIMIT` first, and plpgsql compiles bodies lazily,
+  so every migration applied cleanly and the defect only surfaced when CI smoke first
+  EXECUTED the function. Fixed by migration `202610060006` (CREATE OR REPLACE, no schema
+  change, grants restated identically) per ADR-009. Reviewed migrations 0001-0005 remain
+  byte-exact to the reviewed source. Consequence: reviewed SQL must be executed, not just
+  read, before any of it is trusted; CI now exercises the reviewed functions.
