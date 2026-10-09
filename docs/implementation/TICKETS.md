@@ -11,12 +11,14 @@ Workflow for every ticket:
 - **TICKET-001 Lint/format baseline.** Add ESLint + Prettier configs and scripts
   (`pnpm run lint`, `pnpm run format:check`) consistent with TypeScript strict mode; add to CI.
   Acceptance: lint and format checks pass in CI and locally; no behavioral code changes.
+  ✅ DONE 2026-10-09 by Vibe (PR #4, squash `4348e85`; verifying CI run `37864335884`).
 - **TICKET-002 Contracts + OpenAPI.** Flesh out `packages/contracts` with full Zod (or
   equivalent) schemas for every V1 type and produce `apps/api/openapi/v1.yaml` covering
   `POST /v1/payment-intents`, `GET /v1/payment-intents/{id}`,
   `POST /v1/payment-intents/{id}/confirm`, status, and split routes, using the closed
   problem-code set. Acceptance: schema validation tests pass; OpenAPI lints; no route
-  exposes scheme internals.
+  exposes scheme internals. ✅ DONE 2026-10-09 by Vibe (zod-first rewrite + v1.yaml; see
+  ADR-013 and the squash-merge message for the verifying CI run).
 - **TICKET-003 apps/api routes.** Implement the product HTTP API: auth'd payment-intent
   creation with server-scoped idempotency, read-only status projections with
   `quoteStatus`/`canConfirm`, confirm command returning `202`, problem+correlation
@@ -41,6 +43,10 @@ Workflow for every ticket:
   `--frozen-lockfile`, add an issue/PR templates if useful, and record all executed
   commands and results in `docs/implementation/TEST_EVIDENCE.md`. Also: flip repository to
   private (B-09) and close D-05/ADR-002.
+  Update 2026-10-09: the repo-visibility step is superseded — the owner decided the
+  repository stays public (revised ADR-002; B-09 resolved). Remaining: verified lockfile +
+  `--frozen-lockfile` + TEST_EVIDENCE.md. Note: a `pnpm-lock.yaml` was auto-committed by
+  the TICKET-001 CI guard; it still needs verification before enabling `--frozen-lockfile`.
 
 ## Operator workstream (PRD v1.2 rebaseline, D-08/D-09)
 
