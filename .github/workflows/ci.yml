@@ -41,7 +41,7 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "eeeasy-ci"
             git config user.email "ci@eeeasy-pay.local"
-            git add -A
+            git add -u
             git commit -m "style: apply prettier formatting (CI guard)"
             TARGET_BRANCH="${GITHUB_HEAD_REF:-main}"
             git push origin "HEAD:${TARGET_BRANCH}"
