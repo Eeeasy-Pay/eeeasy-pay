@@ -60,7 +60,10 @@ describe('apps/api/openapi/v1.yaml', () => {
       for (const [method, op] of Object.entries(methods)) {
         if (method === 'parameters') continue;
         const codes = Object.keys(op.responses ?? {});
-        expect(codes.some((c) => /^2\d\d$/.test(c)), method + ' ' + path).toBe(true);
+        expect(
+          codes.some((c) => /^2\d\d$/.test(c)),
+          method + ' ' + path,
+        ).toBe(true);
       }
     }
   });
@@ -76,7 +79,8 @@ describe('apps/api/openapi/v1.yaml', () => {
     const doc = await loadDocument();
     const states = doc.components?.schemas?.['PaymentIntentV1']?.properties?.['state']?.enum ?? [];
     expect(new Set(states)).toEqual(new Set(PAYMENT_STATES));
-    const labels = doc.components?.schemas?.['PaymentStatusV1']?.properties?.['statusLabel']?.enum ?? [];
+    const labels =
+      doc.components?.schemas?.['PaymentStatusV1']?.properties?.['statusLabel']?.enum ?? [];
     expect(new Set(labels)).toEqual(new Set(PAYMENT_STATUS_LABELS));
   });
 

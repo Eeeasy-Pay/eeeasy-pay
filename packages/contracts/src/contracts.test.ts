@@ -74,7 +74,9 @@ describe('problem codes', () => {
 
 describe('CreatePaymentIntentRequestV1', () => {
   it('accepts a valid request', () => {
-    expect(CreatePaymentIntentRequestV1Schema.parse(validCreateRequest)).toEqual(validCreateRequest);
+    expect(CreatePaymentIntentRequestV1Schema.parse(validCreateRequest)).toEqual(
+      validCreateRequest,
+    );
   });
 
   it('accepts the optional idempotency and split fields', () => {
