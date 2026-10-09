@@ -8,10 +8,18 @@ Workflow for every ticket:
 4. Open a PR describing what changed, commands run, and results. The supervising engineer
    reviews and merges. Do not push to `main` directly.
 
-- **TICKET-001 Lint/format baseline.** Add ESLint + Prettier configs and scripts
-  (`pnpm run lint`, `pnpm run format:check`) consistent with TypeScript strict mode; add to CI.
-  Acceptance: lint and format checks pass in CI and locally; no behavioral code changes.
-- **TICKET-002 Contracts + OpenAPI.** Flesh out `packages/contracts` with full Zod (or
+- **TICKET-001 Lint/format baseline — NOT ON MAIN (landed then reverted; re-land
+  required).** Add ESLint + Prettier configs and scripts (`pnpm run lint`,
+  `pnpm run format:check`) consistent with TypeScript strict mode; add to CI. First
+  landing (PR #4, squash `4348e85`, branch-verified green on Actions run
+  `37864335884`) was REVERTED from main by PR #5 (2026-10-09): the Prettier CI guard
+  design (auto-commit formatting mid-run, then fail the run) is unsafe for direct
+  pushes to main, which require a green, tree-stable push CI. Re-land with the guard
+  scoped to `pull_request` events only (never the main `push` event),
+  `pnpm-lock.yaml` excluded from formatting, and a fresh verifying run on the
+  re-land branch. Acceptance: lint and format checks pass in CI (PR events) and
+  locally; no behavioral code changes; a main push can never rewrite the tree.
+- **TICKET-002 Contracts + OpenAPI — ✅ DONE (ADR-013; the squash-merge message records the verifying CI run).** Flesh out `packages/contracts` with full Zod (or
   equivalent) schemas for every V1 type and produce `apps/api/openapi/v1.yaml` covering
   `POST /v1/payment-intents`, `GET /v1/payment-intents/{id}`,
   `POST /v1/payment-intents/{id}/confirm`, status, and split routes, using the closed
@@ -39,8 +47,12 @@ Workflow for every ticket:
   synthetic identities only; verifies the scenario set of TICKET-006 end to end.
 - **TICKET-008 Hardening + evidence.** Commit a verified pnpm lockfile, enable
   `--frozen-lockfile`, add an issue/PR templates if useful, and record all executed
-  commands and results in `docs/implementation/TEST_EVIDENCE.md`. Also: flip repository to
-  private (B-09) and close D-05/ADR-002.
+  commands and results in `docs/implementation/TEST_EVIDENCE.md`. Visibility step SUPERSEDED 2026-10-09: the repository stays public
+  by owner decision (ADR-012; B-09 resolved) — no visibility action required.
+  Lockfile note: no `pnpm-lock.yaml` is currently on main (the only one ever
+  committed arrived Prettier-reformatted via the reverted PR #4 and left with it);
+  commit a freshly generated, unformatted lockfile and keep it excluded from
+  formatting.
 
 ## Operator workstream (PRD v1.2 rebaseline, D-08/D-09)
 

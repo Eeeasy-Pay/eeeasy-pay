@@ -19,10 +19,10 @@ Read `docs/implementation/GUARDRAILS.md` before contributing.
 
 ## Repository layout
 
-- `apps/api` - product HTTP API + versioned OpenAPI contract (TICKET-003)
+- `apps/api` - product HTTP API + versioned OpenAPI contract (`openapi/v1.yaml` landed with TICKET-002; routes in TICKET-003)
 - `apps/worker` - restart-safe outbox processing and inbox projection (TICKET-005)
 - `packages/domain` - pure payment-state transitions, exact minor-unit money, deterministic splits
-- `packages/contracts` - versioned request/response/event schemas and problem codes
+- `packages/contracts` - zod-first V1 schemas, closed problem codes, mirrored into the OpenAPI wire contract (TICKET-002)
 - `packages/ports` - typed repository, clock, notification, and sponsor-DFSP connector interfaces
 - `packages/pal` - quote binding, idempotency fingerprints, expiry projection, event/state mapping
 - `packages/persistence` - narrow repository/transaction implementations (TICKET-004)

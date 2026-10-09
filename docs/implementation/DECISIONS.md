@@ -70,3 +70,22 @@
   regardless of visibility. Recommended while public: protect `main` (PR + green CI before
   merge), keep personal data out of commits, and re-evaluate visibility before any
   live-partner or production launch.
+- **ADR-013 Contracts are Zod-first; the OpenAPI document is the wire contract.** Every
+  V1 type in `packages/contracts` is DERIVED (`z.infer`) from a Zod schema, so runtime
+  validation and compile-time types cannot drift. `apps/api/openapi/v1.yaml` is the V1
+  wire contract; CI validates it and cross-checks its closed enums (problem codes,
+  payment states, status labels) against the Zod contracts, and fails if the document
+  exposes scheme internals. Product routes stay product-level: no external
+  infrastructure identifiers, no internal states, and simulated evidence is always
+  labeled as simulated.
+- **ADR-014 Viability direction: Sudan-only market, partner-led real-money path.**
+  Owner decisions (2026-10-09): the initial market is Sudan only; real-money operation
+  rides on a licensed partner (bank or mobile-money provider) instead of the
+  organization’s own central-bank license for now; the owner has no existing
+  bank/operator relationships yet, so partner outreach is the critical owner-side
+  action. Agreed roadmap: (0) simulator-complete core platform, (1) partner sandbox
+  integration behind `packages/ports` once a partner agreement exists (B-01), (2)
+  limited real-money pilot under the partner’s license, (3) production scale-out.
+  First milestone: partner sandbox integration. Nothing here authorizes real money,
+  live credentials, or live integration; the regulatory structure must be validated by
+  Sudanese counsel before any agreement is signed.
