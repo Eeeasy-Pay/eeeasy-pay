@@ -30,9 +30,13 @@
   pending the partner profile; the fee sanity bound in `packages/domain` is a guard, not a
   fee schedule. Sudan/SDG is the dated simulator default configuration assumption (D-08),
   never a hard-coded currency fact.
-- **B-09 Repository visibility.** The repository is currently **public**. Decision D-05 is
-  private. Owner must flip it to private (Settings -> General -> Danger Zone -> Change
-  visibility) before any further material lands.
+- **B-09 Repository visibility -- RESOLVED 2026-10-09: stays public (owner decision).**
+  The owner decided the repository remains public (ADR-012, superseding ADR-002/D-05).
+  Requirements while public: no secrets or live credentials are ever committed (the CI
+  secret-scan step enforces this), all partner/live integration stays simulated behind
+  `packages/ports`, `main` should be protected (PR + green CI required to merge), no
+  personal data in commits, and visibility is re-evaluated before any live-partner or
+  production work.
 - **B-10 No disposable Kubernetes/Helm environment.** No Helm CLI, kubectl, or isolated
   test cluster is available in the current tooling. The umbrella chart cannot be pulled,
   linted, rendered, or test-installed here. Report this truthfully; never claim a render
@@ -55,8 +59,8 @@
 - **D-04 Quote expiry enforced at command time only** (see migration 0003
   `confirm_payment_intent` and 0005 command-time checks). Read-only status projections may
   report expiry. No DB timer trigger, duplicate column, enum, or timer worker.
-- **D-05 Repository visibility: private.** Decided in ADR-002 (revised from an earlier
-  public-repo idea). Current state is public; action pending (B-09).
+- **D-05 Repository visibility: public (owner decision 2026-10-09).** Supersedes the
+  earlier private decision (ADR-002). Recorded as ADR-012; B-09 resolved.
 - **D-06 Coding-agent workflow.** Tickets in `TICKETS.md` are implemented by the supervised
   coding agent via PRs; CI is the objective gate; the supervising engineer reviews PRs.
   No direct pushes to `main` by the agent.

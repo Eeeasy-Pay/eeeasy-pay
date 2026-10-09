@@ -5,8 +5,8 @@
   `supabase/migrations`, `ci/`, `docs/implementation`. Deployables stay independently
   buildable.
 - **ADR-002 Private repository.** The repository must be private (pre-launch fintech work).
-  Revised from an initially proposed public repo. NOTE: the repository currently exists as a
-  public org repo; flipping it to a private is a pending owner action (B-09). Record here once done.
+  Revised from an initially proposed public repo. **SUPERSEDED 2026-10-09 by ADR-012:** the
+  owner decided the repository remains public. Retained as history.
 - **ADR-003 Toolchain pins.** Node 22, pnpm 10.12.1, turbo ^2.5.0, vitest ^3.2.0,
   TypeScript ^5.8.0. CI installs with `pnpm install --no-frozen-lockfile` until a lockfile is
   committed (TICKET-008). VERIFIED 2026-10-08 by the first fully green CI run
@@ -62,3 +62,11 @@
   the DFSP SDK Scheme Adapter centrally; the Third Party overlay is conditional and off
   by default. No render/install claim may be made until a disposable cluster and Helm
   are actually available and exercised (B-10, TICKET-009/010).
+- **ADR-012 Repository remains public (owner decision).** Decided by the owner on
+  2026-10-09; supersedes ADR-002/D-05 for the current simulator-only stage. The repository
+  stays public. Guardrails that keep this acceptable: no secrets or live credentials are
+  ever committed (CI secret-scan enforces), everything partner-specific stays simulated
+  behind `packages/ports`, and claim discipline (no render/install/live claims) applies
+  regardless of visibility. Recommended while public: protect `main` (PR + green CI before
+  merge), keep personal data out of commits, and re-evaluate visibility before any
+  live-partner or production launch.
