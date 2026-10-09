@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: Eeeasy-Pay Product API
+  version: 1.0.0
+  description: >-
+    Product-facing V1 wire contract of the Eeeasy-Pay peer-to-peer payment and
+    bill-splitting orchestration layer. Scope note: this documents the SIMULATOR-ONLY
+    build. Every transfer and settlement result it can return is simulated evidence; no
+    bank debit, external transfer, or settlement occurs. The closed problem-code set and
+    the closed enums are mirrored from the Zod contracts in packages/contracts and
+    cross-checked in CI.
+servers:
+  - url: http://localhost:4000
+    description: Local development server (placeholder; no production server exists).
+tags:
+  - name: payment-intents
+    description: Payment intent lifecycle (create, read, confirm) and status projections.
+  - name: splits
+    description: Bill splitting (bills, shares, invite claims).
+security:
+  - bearerAuth: []
+paths:
+  /v1/payment-intents:
+    post:
+      tags: [payment-intents]
+      operationId: createPaymentIntent
+      summary: Create a payment intent.
+      description: >-
+        Creates a payment intent for the authenticated actor and returns its current
+        read-only projection. The optional idempotencyKey is an untrusted correlation
+        input; the server-side fingerprint is authoritative.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentIntentRequestV1'
+      responses:
+        '201':
+          description: Payment intent created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntentV1'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '422':
+          $ref: '#/components/responses/Problem'
+        '429':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+  /v1/payment-intents/{paymentIntentId}:
+    get:
+      tags: [payment-intents]
+      operationId: getPaymentIntent
+      summary: Read a payment intent.
+      description: Read-only projection of a payment intent owned by the authenticated actor. GET never mutates product state.
+      parameters:
+        - $ref: '#/components/parameters/PaymentIntentId'
+      responses:
+        '200':
+          description: Payment intent projection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntentV1'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+  /v1/payment-intents/{paymentIntentId}/status:
+    get:
+      tags: [payment-intents]
+      operationId: getPaymentIntentStatus
+      summary: Read the product status label projection.
+      description: >-
+        Read-only product status. Simulated completion is always labeled
+        recipient_credited_simulated or settlement_simulated, never as a real transfer.
+      parameters:
+        - $ref: '#/components/parameters/PaymentIntentId'
+      responses:
+        '200':
+          description: Product status projection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusV1'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+  /v1/payment-intents/{paymentIntentId}/confirm:
+    post:
+      tags: [payment-intents]
+      operationId: confirmPaymentIntent
+      summary: Confirm a payment intent.
+      description: >-
+        Submits the confirmed quote for processing and returns 202 Accepted. The transfer
+        outcome is asynchronous and is read via the status routes. The command re-checks
+        quote expiry and binding inside its transaction.
+      parameters:
+        - $ref: '#/components/parameters/PaymentIntentId'
+      responses:
+        '202':
+          description: Confirm command accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmResponseV1'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '429':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+  /v1/split-bills:
+    post:
+      tags: [splits]
+      operationId: createSplitBill
+      summary: Create a split bill with its shares.
+      description: Every share is a separate payment authorization; the split only computes amounts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSplitBillRequestV1'
+      responses:
+        '201':
+          description: Split bill created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitBillCreatedResponseV1'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '422':
+          $ref: '#/components/responses/Problem'
+        '429':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+  /v1/split-bills/{splitBillId}:
+    get:
+      tags: [splits]
+      operationId: getSplitBill
+      summary: Read a split bill.
+      parameters:
+        - $ref: '#/components/parameters/SplitBillId'
+      responses:
+        '200':
+          description: Split bill projection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitBillV1'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+  /v1/split-bills/{splitBillId}/shares:
+    get:
+      tags: [splits]
+      operationId: listSplitShares
+      summary: List the shares of a split bill.
+      parameters:
+        - $ref: '#/components/parameters/SplitBillId'
+      responses:
+        '200':
+          description: Share list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitShareListV1'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+  /v1/split-shares/claim-invite:
+    post:
+      tags: [splits]
+      operationId: claimSplitShareInvite
+      summary: Claim a split share invite.
+      description: >-
+        Claiming binds the authenticated actor to the share. It is NOT a payment
+        authorization: no funds move and no payment intent is created.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimInviteRequestV1'
+      responses:
+        '200':
+          description: Claim result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimInviteResponseV1'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '429':
+          $ref: '#/components/responses/Problem'
+        '500':
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token of the authenticated product user.
+  parameters:
+    PaymentIntentId:
+      name: paymentIntentId
+      in: path
+      required: true
+      description: Payment intent identifier.
+      schema:
+        type: string
+        format: uuid
+    SplitBillId:
+      name: splitBillId
+      in: path
+      required: true
+      description: Split bill identifier.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Problem:
+      description: Problem detail with the closed problem-code set (see packages/contracts).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+  schemas:
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code, detail, correlationId]
+      properties:
+        type:
+          type: string
+          minLength: 1
+          description: Stable problem type URI.
+        title:
+          type: string
+          minLength: 1
+        status:
+          type: integer
+          enum: [400, 401, 403, 404, 409, 422, 429, 500]
+        code:
+          type: string
+          enum:
+            - validation_error
+            - unauthenticated
+            - forbidden
+            - not_found
+            - quote_expired
+            - quote_not_bound
+            - state_conflict
+            - idempotency_conflict
+            - rate_limited
+            - unsupported_currency
+            - simulator_limit
+            - needs_reconciliation
+            - internal_error
+        detail:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+        instance:
+          type: string
+          minLength: 1
+    CreatePaymentIntentRequestV1:
+      type: object
+      additionalProperties: false
+      required: [sourceBankLinkId, recipientAliasId, currency, amountMinor]
+      properties:
+        sourceBankLinkId:
+          type: string
+          format: uuid
+          description: Previously linked sending account reference.
+        recipientAliasId:
+          type: string
+          minLength: 1
+          maxLength: 255
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        amountMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+          description: Exact minor units as a decimal string; never a float.
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Untrusted correlation input; the server fingerprint is authoritative.
+        splitShareId:
+          type: string
+          format: uuid
+    QuoteV1:
+      type: object
+      additionalProperties: false
+      required:
+        - quoteId
+        - apiProfile
+        - currency
+        - requestedAmountMinor
+        - quotedFeeMinor
+        - payerDebitMinor
+        - recipientAmountMinor
+        - feeRuleVersion
+        - issuedAt
+        - expiresAt
+      properties:
+        quoteId:
+          type: string
+          format: uuid
+        apiProfile:
+          type: string
+          minLength: 1
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        requestedAmountMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+        quotedFeeMinor:
+          type: string
+          pattern: '^(0|[1-9][0-9]*)$'
+        payerDebitMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+        recipientAmountMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+        feeRuleVersion:
+          type: string
+          minLength: 1
+        issuedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    PaymentIntentV1:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentIntentId
+        - state
+        - currency
+        - requestedAmountMinor
+        - quoteStatus
+        - canConfirm
+        - createdAt
+        - updatedAt
+      properties:
+        paymentIntentId:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum:
+            - created
+            - lookup_pending
+            - quoting
+            - quoted
+            - user_authorized
+            - transfer_submitted
+            - transfer_processing
+            - transfer_prepared
+            - transfer_committed
+            - recipient_credit_pending
+            - completed
+            - rejected
+            - expired
+            - unknown_reconciliation
+            - compensation_pending
+            - manual_resolution
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        requestedAmountMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+        quote:
+          $ref: '#/components/schemas/QuoteV1'
+        quoteStatus:
+          type: string
+          enum: [valid, expired, unavailable]
+        canConfirm:
+          type: boolean
+        evidenceSource:
+          type: string
+          enum: [SIMULATOR]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ConfirmResponseV1:
+      type: object
+      additionalProperties: false
+      required: [paymentIntentId, accepted, statusLabel]
+      properties:
+        paymentIntentId:
+          type: string
+          format: uuid
+        accepted:
+          type: boolean
+          enum: [true]
+        statusLabel:
+          type: string
+          enum:
+            - submitted
+            - processing
+            - unknown_needs_reconciliation
+            - recipient_credited_simulated
+            - settlement_simulated
+            - rejected
+            - expired
+            - manual_resolution
+    PaymentStatusV1:
+      type: object
+      additionalProperties: false
+      required: [paymentIntentId, state, statusLabel, settlementState]
+      properties:
+        paymentIntentId:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum:
+            - created
+            - lookup_pending
+            - quoting
+            - quoted
+            - user_authorized
+            - transfer_submitted
+            - transfer_processing
+            - transfer_prepared
+            - transfer_committed
+            - recipient_credit_pending
+            - completed
+            - rejected
+            - expired
+            - unknown_reconciliation
+            - compensation_pending
+            - manual_resolution
+        statusLabel:
+          type: string
+          enum:
+            - submitted
+            - processing
+            - unknown_needs_reconciliation
+            - recipient_credited_simulated
+            - settlement_simulated
+            - rejected
+            - expired
+            - manual_resolution
+        settlementState:
+          type: string
+          enum: [not_applicable, pending, settled, exception, unknown]
+        simulatorNote:
+          type: string
+          enum: ['simulated only: no bank debit, scheme transfer, or settlement occurred']
+    SplitBillV1:
+      type: object
+      additionalProperties: false
+      required: [splitBillId, title, currency, totalMinor, splitState, roundingPolicy, createdAt]
+      properties:
+        splitBillId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        totalMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+        splitState:
+          type: string
+          enum: [draft, open, closed, cancelled]
+        roundingPolicy:
+          type: string
+          enum: [explicit_minor_units, remainder_to_first_share]
+        closesAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    SplitShareV1:
+      type: object
+      additionalProperties: false
+      required: [splitShareId, splitBillId, amountMinor, shareState, createdAt]
+      properties:
+        splitShareId:
+          type: string
+          format: uuid
+        splitBillId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+        shareState:
+          type: string
+          enum: [unpaid, payment_pending, paid, failed, expired, cancelled, needs_review]
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ShareInputV1:
+      type: object
+      additionalProperties: false
+      required: [amountMinor]
+      properties:
+        amountMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+    CreateSplitBillRequestV1:
+      type: object
+      additionalProperties: false
+      required: [title, currency, totalMinor, roundingPolicy, shares]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        totalMinor:
+          type: string
+          pattern: '^[1-9][0-9]*$'
+        roundingPolicy:
+          type: string
+          enum: [explicit_minor_units, remainder_to_first_share]
+        closesAt:
+          type: string
+          format: date-time
+        shares:
+          type: array
+          minItems: 2
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ShareInputV1'
+    SplitBillCreatedResponseV1:
+      type: object
+      additionalProperties: false
+      required: [splitBill, shares]
+      properties:
+        splitBill:
+          $ref: '#/components/schemas/SplitBillV1'
+        shares:
+          type: array
+          items:
+            $ref: '#/components/schemas/SplitShareV1'
+    SplitShareListV1:
+      type: object
+      additionalProperties: false
+      required: [shares]
+      properties:
+        shares:
+          type: array
+          items:
+            $ref: '#/components/schemas/SplitShareV1'
+    ClaimInviteRequestV1:
+      type: object
+      additionalProperties: false
+      required: [splitShareId, inviteToken]
+      properties:
+        splitShareId:
+          type: string
+          format: uuid
+        inviteToken:
+          type: string
+          minLength: 1
+          maxLength: 255
+    ClaimInviteResponseV1:
+      type: object
+      additionalProperties: false
+      required: [splitShareId, result]
+      properties:
+        splitShareId:
+          type: string
+          format: uuid
+        result:
+          type: string
+          enum: [claimed, already_claimed]
