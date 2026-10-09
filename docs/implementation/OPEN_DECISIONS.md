@@ -30,9 +30,9 @@
   pending the partner profile; the fee sanity bound in `packages/domain` is a guard, not a
   fee schedule. Sudan/SDG is the dated simulator default configuration assumption (D-08),
   never a hard-coded currency fact.
-- **B-09 Repository visibility.** The repository is currently **public**. Decision D-05 is
-  private. Owner must flip it to private (Settings -> General -> Danger Zone -> Change
-  visibility) before any further material lands.
+- **B-09 Repository visibility — RESOLVED 2026-10-09.** The owner decided the repository
+  stays PUBLIC (revised ADR-002). No pending action. Standing constraints: no secrets, no
+  partner-confidential material in the repository, simulator-only claims.
 - **B-10 No disposable Kubernetes/Helm environment.** No Helm CLI, kubectl, or isolated
   test cluster is available in the current tooling. The umbrella chart cannot be pulled,
   linted, rendered, or test-installed here. Report this truthfully; never claim a render
@@ -55,8 +55,8 @@
 - **D-04 Quote expiry enforced at command time only** (see migration 0003
   `confirm_payment_intent` and 0005 command-time checks). Read-only status projections may
   report expiry. No DB timer trigger, duplicate column, enum, or timer worker.
-- **D-05 Repository visibility: private.** Decided in ADR-002 (revised from an earlier
-  public-repo idea). Current state is public; action pending (B-09).
+- **D-05 Repository visibility: private — SUPERSEDED 2026-10-09.** The owner decided the
+  repository stays public (revised ADR-002). Kept for the record.
 - **D-06 Coding-agent workflow.** Tickets in `TICKETS.md` are implemented by the supervised
   coding agent via PRs; CI is the objective gate; the supervising engineer reviews PRs.
   No direct pushes to `main` by the agent.
@@ -101,3 +101,14 @@
   `example-mojaloop-backend` and inline dependency manifests are PoC/dev/test only,
   never production guidance. Every Helm command must name a chart; if Helm is missing,
   say so and do not claim a render (B-10).
+- **D-10 Viability pivot (owner statement, 2026-10-09).** The goal is a VIABLE product,
+  not a simulator-only demo. The simulator-first architecture stays the foundation:
+  becoming real means replacing simulator adapters behind `packages/ports` with real
+  partner integrations plus passing the regulatory gates. This decision alone authorizes
+  no scope change to the simulator-only claims.
+- **D-11 Viability model (owner Q&A, 2026-10-09): Sudan-only, partner-led.** See ADR-012.
+  First milestone: partner sandbox integration. Real-money movement requires the
+  partner's license/sponsorship; B-01 remains the blocking decision for viability. A
+  CBoS mobile-payment license for the organization itself is out of scope for now; the
+  regulatory structure must be validated by Sudanese counsel before agreements are
+  signed.
