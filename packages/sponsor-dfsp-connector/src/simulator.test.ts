@@ -24,7 +24,12 @@ describe('SimulatorSponsorDfspConnector.quote', () => {
   it('rejects non-positive amounts', async () => {
     const sim = new SimulatorSponsorDfspConnector(clock('2026-10-08T00:00:00.000Z'));
     await expect(
-      sim.quote({ paymentIntentId: 'pi', correlationId: 'c', currency: 'XTS', requestedAmountMinor: 0n }),
+      sim.quote({
+        paymentIntentId: 'pi',
+        correlationId: 'c',
+        currency: 'XTS',
+        requestedAmountMinor: 0n,
+      }),
     ).rejects.toThrow();
   });
 });
@@ -33,7 +38,12 @@ describe('scripted submission scenarios', () => {
   const sim = new SimulatorSponsorDfspConnector(clock('2026-10-08T00:00:00.000Z'), {
     script: ['success', 'reject', 'timeout_unknown'],
   });
-  const cmd = { paymentIntentId: 'pi-1', quoteId: 'q-1', quoteBindingDigest: 'ab'.repeat(32), correlationId: 'c-1' };
+  const cmd = {
+    paymentIntentId: 'pi-1',
+    quoteId: 'q-1',
+    quoteBindingDigest: 'ab'.repeat(32),
+    correlationId: 'c-1',
+  };
 
   it('cycles success -> reject -> timeout_unknown with sequential ids', async () => {
     const first = await sim.submitTransfer(cmd);
@@ -60,7 +70,12 @@ describe('reconciliation of ambiguous outcomes', () => {
     const sim = new SimulatorSponsorDfspConnector(clock('2026-10-08T00:00:00.000Z'), {
       script: ['timeout_unknown'],
     });
-    const cmd = { paymentIntentId: 'pi-1', quoteId: 'q-1', quoteBindingDigest: 'ab'.repeat(32), correlationId: 'c-1' };
+    const cmd = {
+      paymentIntentId: 'pi-1',
+      quoteId: 'q-1',
+      quoteBindingDigest: 'ab'.repeat(32),
+      correlationId: 'c-1',
+    };
     const outcome = await sim.submitTransfer(cmd);
     if (outcome.kind !== 'timeout_unknown') {
       throw new Error('expected timeout_unknown');

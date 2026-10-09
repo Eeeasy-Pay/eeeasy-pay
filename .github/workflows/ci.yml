@@ -9,8 +9,15 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    permissions:
+      # The Prettier guard may commit+push formatting fixes back to the branch.
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # On PRs, check out the real head branch (not the detached merge ref)
+          # so the Prettier guard can commit formatting fixes back to the branch.
+          ref: ${{ github.head_ref || github.ref }}
       - uses: pnpm/action-setup@v4
         with:
           version: 10.12.1
@@ -19,6 +26,29 @@ jobs:
           node-version-file: .nvmrc
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+      - name: Lint (ESLint)
+        run: |
+          set -o pipefail
+          if ! pnpm run lint; then
+            echo "ESLint failed. First issues as annotations:"
+            pnpm exec eslint . --format unix 2>/dev/null | grep -E ':[0-9]+:[0-9]+: ' | head -50 | sed -E 's#^([^:]+):([0-9]+):[0-9]+: (.*)$#::error file=\1,line=\2::ESLint \3#' || true
+            exit 1
+          fi
+      - name: Enforce Prettier formatting (auto-commits if needed, then requires a fresh run)
+        run: |
+          pnpm run format
+          if ! git diff --quiet; then
+            git config user.name "eeeasy-ci"
+            git config user.email "ci@eeeasy-pay.local"
+            git add -A
+            git commit -m "style: apply prettier formatting (CI guard)"
+            TARGET_BRANCH="${GITHUB_HEAD_REF:-main}"
+            git push origin "HEAD:${TARGET_BRANCH}"
+            echo "::error title=Formatting pushed::Prettier reformatting was committed to this branch. A new CI run on the formatted commit is required and will verify it; push any new commit to trigger it."
+            exit 1
+          fi
+      - name: Format check
+        run: pnpm run format:check
       - name: Typecheck
         run: pnpm run typecheck
       - name: Unit tests
