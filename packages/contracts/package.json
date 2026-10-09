@@ -9,13 +9,17 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
-    "test": "echo 'contracts: schemas are validated in TICKET-002' && exit 0"
+    "test": "vitest run"
   },
   "dependencies": {
-    "@eeeasy-pay/domain": "workspace:*"
+    "@eeeasy-pay/domain": "workspace:*",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^10.0.3",
     "@types/node": "^22.15.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0",
+    "yaml": "^2.5.0"
   }
 }
