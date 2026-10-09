@@ -59,3 +59,4 @@ psql -v ON_ERROR_STOP=1 -f ci/db/smoke.sql
 Foundation + first vertical slice in progress. See `docs/implementation/TICKETS.md` for the
 ticket workflow used with the coding agent, and `docs/implementation/OPEN_DECISIONS.md` for the
 blockers that prevent any partner integration or real-money use.
+<!-- ci-trigger: verify prettier-formatted tree (TICKET-001) -->
