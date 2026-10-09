@@ -15,7 +15,10 @@ export type MoneyErrorCode =
   | 'fee_out_of_range';
 
 export class MoneyError extends Error {
-  constructor(readonly code: MoneyErrorCode, message: string) {
+  constructor(
+    readonly code: MoneyErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = 'MoneyError';
   }
@@ -62,7 +65,10 @@ export function nonNegative(currency: CurrencyCode, minor: bigint): MinorAmount 
 
 function assertSameCurrency(a: MinorAmount, b: MinorAmount): void {
   if (a.currency !== b.currency) {
-    throw new MoneyError('currency_mismatch', 'cannot combine currencies ' + a.currency + ' and ' + b.currency);
+    throw new MoneyError(
+      'currency_mismatch',
+      'cannot combine currencies ' + a.currency + ' and ' + b.currency,
+    );
   }
 }
 

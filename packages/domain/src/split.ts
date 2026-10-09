@@ -8,7 +8,11 @@ export type RoundingPolicy = 'explicit_minor_units' | 'remainder_to_first_share'
 export type ShareAllocation = readonly bigint[];
 
 /** Deterministic even allocation; any remainder goes to the first share. */
-export function allocateEvenly(totalMinor: bigint, shareCount: number, policy: RoundingPolicy): ShareAllocation {
+export function allocateEvenly(
+  totalMinor: bigint,
+  shareCount: number,
+  policy: RoundingPolicy,
+): ShareAllocation {
   if (totalMinor <= 0n) {
     throw new MoneyError('non_positive', 'total must be positive');
   }

@@ -10,7 +10,9 @@ import {
 describe('sha256Hex (pure-JS FIPS 180-4)', () => {
   it('matches known vectors', () => {
     expect(sha256Hex('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
-    expect(sha256Hex('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    expect(sha256Hex('abc')).toBe(
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    );
   });
   it('is deterministic and distinguishes inputs', () => {
     expect(sha256Hex('a')).not.toBe(sha256Hex('b'));
@@ -72,7 +74,9 @@ describe('quote binding digest', () => {
     expect(quoteBindingSha256(terms)).toBe(quoteBindingSha256(reordered as typeof terms));
   });
   it('changes if any term changes', () => {
-    expect(quoteBindingSha256({ ...terms, quotedFeeMinor: '2' })).not.toBe(quoteBindingSha256(terms));
+    expect(quoteBindingSha256({ ...terms, quotedFeeMinor: '2' })).not.toBe(
+      quoteBindingSha256(terms),
+    );
     expect(quoteBindingSha256({ ...terms, expiresAt: '2026-10-08T00:02:00.000Z' })).not.toBe(
       quoteBindingSha256(terms),
     );

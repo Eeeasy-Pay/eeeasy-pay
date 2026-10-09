@@ -80,9 +80,7 @@ export interface TransferTimeoutUnknown {
 }
 
 export type TransferSubmissionOutcome =
-  | TransferCommitted
-  | TransferRejected
-  | TransferTimeoutUnknown;
+  TransferCommitted | TransferRejected | TransferTimeoutUnknown;
 
 export type TransferQueryStatus = 'committed' | 'rejected' | 'unknown';
 
@@ -177,7 +175,11 @@ export interface OutboxRepository {
     payloadDigest: string;
     safePayload: Readonly<Record<string, unknown>>;
   }): Promise<string>;
-  claim(input: { workerId: string; limit: number; leaseSeconds: number }): Promise<OutboxMessageRecord[]>;
+  claim(input: {
+    workerId: string;
+    limit: number;
+    leaseSeconds: number;
+  }): Promise<OutboxMessageRecord[]>;
   finish(input: {
     outboxMessageId: string;
     workerId: string;
