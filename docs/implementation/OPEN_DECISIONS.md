@@ -105,3 +105,14 @@
   `example-mojaloop-backend` and inline dependency manifests are PoC/dev/test only,
   never production guidance. Every Helm command must name a chart; if Helm is missing,
   say so and do not claim a render (B-10).
+- **D-10 Viability pivot (owner statement, 2026-10-09).** The goal is a VIABLE product,
+  not a simulator-only demo. The simulator-first architecture stays the foundation:
+  becoming real means replacing simulator adapters behind `packages/ports` with real
+  partner integrations plus passing the regulatory gates. This decision alone authorizes
+  no scope change to the simulator-only claims.
+- **D-11 Viability model (owner Q&A, 2026-10-09): Sudan-only, partner-led.** See
+  ADR-014. First milestone: partner sandbox integration. Real-money movement requires
+  the partner’s license/sponsorship; B-01 remains the blocking decision for
+  viability. A CBoS mobile-payment license for the organization itself is out of
+  scope for now; the regulatory structure must be validated by Sudanese counsel before
+  agreements are signed.
