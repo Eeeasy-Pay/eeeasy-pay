@@ -4,9 +4,11 @@
   `apps/worker`, `packages/{domain,contracts,ports,pal,persistence,sponsor-dfsp-connector}`,
   `supabase/migrations`, `ci/`, `docs/implementation`. Deployables stay independently
   buildable.
-- **ADR-002 Private repository.** The repository must be private (pre-launch fintech work).
-  Revised from an initially proposed public repo. NOTE: the repository currently exists as a
-  public org repo; flipping it to a private is a pending owner action (B-09). Record here once done.
+- **ADR-002 Repository visibility: PUBLIC (owner decision, 2026-10-09).** The owner
+  reviewed and decided the repository STAYS PUBLIC; this supersedes the previous private
+  stance of this ADR and of D-05/B-09. Acceptable under the standing constraints: strictly
+  no secrets (CI secret-scan gate), no partner-confidential material in the repository,
+  simulator-only claims everywhere, and reviewed migrations kept byte-exact.
 - **ADR-003 Toolchain pins.** Node 22, pnpm 10.12.1, turbo ^2.5.0, vitest ^3.2.0,
   TypeScript ^5.8.0. CI installs with `pnpm install --no-frozen-lockfile` until a lockfile is
   committed (TICKET-008). VERIFIED 2026-10-08 by the first fully green CI run
@@ -37,7 +39,7 @@
 
 - **ADR-009 Forward-only function-body fix migration.** CI execution proved reviewed
   migration 0003 shipped `claim_outbox` with an unparseable CTE (`FOR UPDATE SKIP LOCKED`
-  before `LIMIT`). Because plpgsql bodies compile at first call, applying migrations is
+  before `LIMIT`). Because plpgsql compiles bodies lazily, applying migrations is
   not sufficient evidence that they work. The defect was fixed by ADDING migration
   `202610060006` (CREATE OR REPLACE with the corrected clause order) rather than editing
   the reviewed 0001-0005 set, preserving byte-exact provenance and the immutability rule.
@@ -62,3 +64,22 @@
   the DFSP SDK Scheme Adapter centrally; the Third Party overlay is conditional and off
   by default. No render/install claim may be made until a disposable cluster and Helm
   are actually available and exercised (B-10, TICKET-009/010).
+- **ADR-012 Viability direction: Sudan-only market, partner-led real-money path.**
+  Owner decisions (2026-10-09): the initial market is Sudan only; real-money operation rides
+  on a licensed partner (bank or mobile-money provider) instead of the organization's own
+  central-bank license for now; the owner has no existing bank/operator relationships yet,
+  so partner outreach is the critical owner-side action. Agreed roadmap: (0)
+  simulator-complete core platform, (1) partner sandbox integration behind
+  `packages/ports` once a partner agreement exists (B-01), (2) limited real-money pilot
+  under the partner's license, (3) production scale-out. First milestone: partner sandbox
+  integration. Nothing here authorizes real money, live credentials, or live integration;
+  the regulatory structure must be validated by Sudanese counsel before any agreement is
+  signed.
+- **ADR-013 Contracts are Zod-first; the OpenAPI document is the wire contract.** Every
+  V1 type in `packages/contracts` is DERIVED (`z.infer`) from a Zod schema, so runtime
+  validation and compile-time types cannot drift. `apps/api/openapi/v1.yaml` is the V1
+  wire contract; CI validates it and cross-checks its closed enums (problem codes,
+  payment states, status labels) against the Zod contracts, and fails if the document
+  exposes scheme internals. Product routes stay product-level: no external
+  infrastructure identifiers, no internal states, and simulated evidence is always
+  labeled as simulated.
