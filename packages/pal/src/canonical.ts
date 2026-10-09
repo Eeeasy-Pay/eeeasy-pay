@@ -30,7 +30,12 @@ function utf8Bytes(input: string): Uint8Array {
     } else if (cp < 0x10000) {
       out.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
     } else {
-      out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+      out.push(
+        0xf0 | (cp >> 18),
+        0x80 | ((cp >> 12) & 0x3f),
+        0x80 | ((cp >> 6) & 0x3f),
+        0x80 | (cp & 0x3f),
+      );
     }
   }
   return Uint8Array.from(out);
@@ -62,7 +67,14 @@ function sha256Bytes(message: Uint8Array): Uint8Array {
       const s1 = rotr(y, 17) ^ rotr(y, 19) ^ (y >>> 10);
       w[t] = (w[t - 16]! + s0 + w[t - 7]! + s1) >>> 0;
     }
-    let a = H[0]!, b = H[1]!, c = H[2]!, d = H[3]!, e = H[4]!, f = H[5]!, g = H[6]!, h = H[7]!;
+    let a = H[0]!,
+      b = H[1]!,
+      c = H[2]!,
+      d = H[3]!,
+      e = H[4]!,
+      f = H[5]!,
+      g = H[6]!,
+      h = H[7]!;
     for (let t = 0; t < 64; t += 1) {
       const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
       const ch = (e & f) ^ (~e & g);
@@ -70,8 +82,14 @@ function sha256Bytes(message: Uint8Array): Uint8Array {
       const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
       const maj = (a & b) ^ (a & c) ^ (b & c);
       const t2 = (S0 + maj) >>> 0;
-      h = g; g = f; f = e; e = (d + t1) >>> 0;
-      d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      h = g;
+      g = f;
+      f = e;
+      e = (d + t1) >>> 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (t1 + t2) >>> 0;
     }
     H[0] = (H[0]! + a) >>> 0;
     H[1] = (H[1]! + b) >>> 0;
