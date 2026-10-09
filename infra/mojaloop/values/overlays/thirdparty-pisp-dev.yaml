@@ -1,0 +1,15 @@
+# CONDITIONAL — ISOLATED SYNTHETIC PISP-PATH TRIAL ONLY. Never production.
+# Use only for a disposable test of the Mojaloop Third Party API route; the app route
+# decision (packet D-15) remains open. Requires the Third Party Auth Service (Redis/MySQL)
+# and Consent Oracle (MySQL) backends, provisioned separately; the chart's example
+# backend/manifests are PoC/dev/test only.
+account-lookup-service:
+  account-lookup-service:
+    config:
+      featureEnableExtendedPartyIdType: true
+  account-lookup-service-admin:
+    config:
+      featureEnableExtendedPartyIdType: true
+
+thirdparty:
+  enabled: true

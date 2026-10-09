@@ -1,0 +1,3 @@
+# Local working area for pulled chart archives and render output.
+# Never commit the .tgz, rendered manifests, or credentials.
+.artifacts/

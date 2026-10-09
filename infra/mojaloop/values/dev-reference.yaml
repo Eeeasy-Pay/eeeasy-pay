@@ -1,0 +1,19 @@
+# Non-secret baseline values for DISPOSABLE dev/test renders of the official
+# mojaloop/mojaloop umbrella chart, version 17.2.0 (test/reproducibility reference
+# only — D-09/ADR-011, B-10).
+#
+# Derived from inspection of the tagged v17.2.0 values structure:
+# https://github.com/mojaloop/helm/blob/v17.2.0/mojaloop/values.yaml
+# This file intentionally overrides almost nothing. BEFORE any real render, review
+# `helm show values mojaloop/mojaloop --version 17.2.0` and diff this file against it.
+# NEVER put secrets, credentials, or real endpoints here — credentials belong in the
+# approved secret manager at deploy time.
+#
+# Backends (MySQL/Kafka/Redis/MongoDB): the chart's example backend is for throwaway
+# demos only. For anything longer-lived, use separately managed dependencies.
+
+# The Third Party (PISP) overlay is conditional and off by default per the chart docs.
+# Keep it explicitly OFF for the sponsor-channel baseline. Only the isolated synthetic
+# PISP-path trial uses values/overlays/thirdparty-pisp-dev.yaml.
+thirdparty:
+  enabled: false
