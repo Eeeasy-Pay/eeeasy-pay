@@ -14,6 +14,10 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # On PRs, check out the real head branch (not the detached merge ref)
+          # so the Prettier guard can commit formatting fixes back to the branch.
+          ref: ${{ github.head_ref || github.ref }}
       - uses: pnpm/action-setup@v4
         with:
           version: 10.12.1
@@ -38,7 +42,8 @@ jobs:
             git config user.email "ci@eeeasy-pay.local"
             git add -A
             git commit -m "style: apply prettier formatting (CI guard)"
-            git push
+            TARGET_BRANCH="${GITHUB_HEAD_REF:-main}"
+            git push origin "HEAD:${TARGET_BRANCH}"
             echo "::error title=Formatting pushed::Prettier reformatting was committed to this branch. A new CI run on the formatted commit is required and will verify it; push any new commit to trigger it."
             exit 1
           fi
