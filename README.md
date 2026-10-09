@@ -27,6 +27,7 @@ Read `docs/implementation/GUARDRAILS.md` before contributing.
 - `packages/pal` - quote binding, idempotency fingerprints, expiry projection, event/state mapping
 - `packages/persistence` - narrow repository/transaction implementations (TICKET-004)
 - `packages/sponsor-dfsp-connector` - deterministic simulator only; no live connector
+- `infra/mojaloop` - operator-owned central Hub release inputs (TICKETS 009-010; reference only)
 - `supabase/migrations` - reviewed ordered SQL (Postgres; Supabase-compatible roles/RLS)
 - `ci/` - CI database fixtures, smoke assertions, secret scan
 - `docs/implementation` - decisions, blockers, tickets, setup
@@ -38,6 +39,8 @@ green CI run, see docs/implementation/DECISIONS.md ADR-003):
 
 ```bash
 pnpm install --no-frozen-lockfile
+pnpm run lint
+pnpm run format:check
 pnpm run typecheck
 pnpm run test
 pnpm run secret-scan

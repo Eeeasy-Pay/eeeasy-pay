@@ -1,3 +1,4 @@
+# pnpm workspace globs: shared packages plus deployable apps.
 packages:
-  - "packages/*"
-  - "apps/*"
+  - 'packages/*'
+  - 'apps/*'

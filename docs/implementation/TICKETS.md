@@ -8,17 +8,16 @@ Workflow for every ticket:
 4. Open a PR describing what changed, commands run, and results. The supervising engineer
    reviews and merges. Do not push to `main` directly.
 
-- **TICKET-001 Lint/format baseline — NOT ON MAIN (landed then reverted; re-land
-  required).** Add ESLint + Prettier configs and scripts (`pnpm run lint`,
-  `pnpm run format:check`) consistent with TypeScript strict mode; add to CI. First
-  landing (PR #4, squash `4348e85`, branch-verified green on Actions run
-  `37864335884`) was REVERTED from main by PR #5 (2026-10-09): the Prettier CI guard
-  design (auto-commit formatting mid-run, then fail the run) is unsafe for direct
-  pushes to main, which require a green, tree-stable push CI. Re-land with the guard
-  scoped to `pull_request` events only (never the main `push` event),
-  `pnpm-lock.yaml` excluded from formatting, and a fresh verifying run on the
-  re-land branch. Acceptance: lint and format checks pass in CI (PR events) and
-  locally; no behavioral code changes; a main push can never rewrite the tree.
+- **TICKET-001 Lint/format baseline — ✅ DONE (re-landed 2026-10-09; see ADR-015; the
+  squash-merge message records the verifying CI run).** ESLint 9 flat config and
+  Prettier 3 with `pnpm run lint` / `pnpm run format:check` scripts and CI steps.
+  The first landing (PR #4, squash `4348e85`, verifying run `37864335884`) was
+  reverted by PR #5 because the Prettier guard's mid-run auto-commit is unsafe for
+  direct pushes to main. Re-land: same tooling with the guard gated to
+  `pull_request` events only (a main push can never rewrite the tree) and
+  `pnpm-lock.yaml` excluded from formatting (lockfile work is TICKET-008).
+  Acceptance: lint and format checks pass in CI (PR events) and locally; no
+  behavioral code changes.
 - **TICKET-002 Contracts + OpenAPI — ✅ DONE (ADR-013; the squash-merge message records the verifying CI run).** Flesh out `packages/contracts` with full Zod (or
   equivalent) schemas for every V1 type and produce `apps/api/openapi/v1.yaml` covering
   `POST /v1/payment-intents`, `GET /v1/payment-intents/{id}`,

@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  CurrencySchema,
-  PositiveMinorSchema,
-  TimestampSchema,
-  UuidSchema,
-} from './shared.ts';
+import { CurrencySchema, PositiveMinorSchema, TimestampSchema, UuidSchema } from './shared.ts';
 
 export const SPLIT_BILL_STATES = ['draft', 'open', 'closed', 'cancelled'] as const;
 export const SplitBillStateV1Schema = z.enum(SPLIT_BILL_STATES);

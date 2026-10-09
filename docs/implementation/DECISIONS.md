@@ -89,3 +89,11 @@
   First milestone: partner sandbox integration. Nothing here authorizes real money,
   live credentials, or live integration; the regulatory structure must be validated by
   Sudanese counsel before any agreement is signed.
+- **ADR-015 The Prettier formatting guard runs on `pull_request` events only.** The
+  TICKET-001 lint/format baseline re-lands with the auto-commit guard gated with
+  `if: github.event_name == 'pull_request'`: on PRs the guard may reformat, push to
+  the branch, fail its own run, and require a fresh verifying run; on direct pushes
+  to main only non-mutating checks run (lint, `format:check`, typecheck, tests,
+  build, secret scan), so a push event can never rewrite the tree mid-run (the
+  reason PR #4 was reverted by PR #5). `pnpm-lock.yaml` stays excluded from
+  formatting; a verified lockfile is committed separately in TICKET-008.
