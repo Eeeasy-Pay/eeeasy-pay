@@ -94,10 +94,7 @@ export type PaymentStatusLabelV1 =
 
 export type SettlementStateV1 = 'not_applicable' | 'pending' | 'settled' | 'exception' | 'unknown';
 
-export function statusLabelFor(
-  state: PaymentState,
-  settlementState: SettlementStateV1,
-): PaymentStatusLabelV1 {
+export function statusLabelFor(state: PaymentState, settlementState: SettlementStateV1): PaymentStatusLabelV1 {
   if (state === 'completed') {
     // Settlement evidence is a SEPARATE dimension; in simulator mode it is only ever simulated.
     return settlementState === 'settled' ? 'settlement_simulated' : 'recipient_credited_simulated';
@@ -150,8 +147,7 @@ export interface SplitShareV1 {
   readonly splitShareId: string;
   readonly splitBillId: string;
   readonly amountMinor: string;
-  readonly shareState:
-    'unpaid' | 'payment_pending' | 'paid' | 'failed' | 'expired' | 'cancelled' | 'needs_review';
+  readonly shareState: 'unpaid' | 'payment_pending' | 'paid' | 'failed' | 'expired' | 'cancelled' | 'needs_review';
   readonly expiresAt?: string;
   readonly createdAt: string;
 }

@@ -49,13 +49,7 @@ const TRANSITIONS: Readonly<Record<PaymentState, readonly PaymentState[]>> = {
   transfer_prepared: ['transfer_committed', 'unknown_reconciliation', 'rejected'],
   transfer_committed: ['recipient_credit_pending', 'completed', 'unknown_reconciliation'],
   recipient_credit_pending: ['completed', 'unknown_reconciliation'],
-  unknown_reconciliation: [
-    'transfer_processing',
-    'completed',
-    'rejected',
-    'compensation_pending',
-    'manual_resolution',
-  ],
+  unknown_reconciliation: ['transfer_processing', 'completed', 'rejected', 'compensation_pending', 'manual_resolution'],
   compensation_pending: ['completed', 'rejected', 'manual_resolution'],
   completed: [],
   rejected: [],
@@ -116,8 +110,6 @@ export function assertCompletable(state: PaymentState, evidence: CompletionEvide
     throw new EvidenceError('completed state requires credited recipient-credit evidence');
   }
   if (state !== 'completed' && evidence.recipientCreditState === 'credited') {
-    throw new EvidenceError(
-      'credited recipient-credit evidence recorded outside the completed state',
-    );
+    throw new EvidenceError('credited recipient-credit evidence recorded outside the completed state');
   }
 }

@@ -45,16 +45,12 @@ describe('completion evidence gate', () => {
     expect(() => assertCompletable('completed', simEvidence())).not.toThrow();
   });
   it('rejects completed without credited evidence', () => {
-    expect(() =>
-      assertCompletable('completed', simEvidence({ recipientCreditState: 'pending' })),
-    ).toThrow(EvidenceError);
+    expect(() => assertCompletable('completed', simEvidence({ recipientCreditState: 'pending' }))).toThrow(EvidenceError);
   });
   it('rejects credited evidence recorded outside completed', () => {
     expect(() => assertCompletable('transfer_committed', simEvidence())).toThrow(EvidenceError);
   });
   it('rejects PARTNER evidence in this simulator-only repository', () => {
-    expect(() => assertCompletable('completed', simEvidence({ source: 'PARTNER' }))).toThrow(
-      EvidenceError,
-    );
+    expect(() => assertCompletable('completed', simEvidence({ source: 'PARTNER' }))).toThrow(EvidenceError);
   });
 });
