@@ -242,9 +242,13 @@ describe('apps/api payment-intent routes (TICKET-003)', () => {
     expect(foreign.status).toBe(404);
     const problemDetail = ProblemDetailSchema.parse(await foreign.json());
     expect(problemDetail.code).toBe('not_found');
-    const unknown = await harness.call('GET', '/v1/payment-intents/99999999-9999-4999-8999-999999999999', {
-      token: bearerToken(USER_ONE_TOKEN),
-    });
+    const unknown = await harness.call(
+      'GET',
+      '/v1/payment-intents/99999999-9999-4999-8999-999999999999',
+      {
+        token: bearerToken(USER_ONE_TOKEN),
+      },
+    );
     expect(unknown.status).toBe(404);
   });
 

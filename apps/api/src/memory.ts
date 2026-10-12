@@ -229,7 +229,8 @@ export class MemoryOutboxRepository implements OutboxRepository {
       this.messages.set(message.outboxMessageId, { ...message, state: 'published' });
       return true;
     }
-    const nextState: 'pending' | 'dead_letter' = input.retryAt === undefined ? 'dead_letter' : 'pending';
+    const nextState: 'pending' | 'dead_letter' =
+      input.retryAt === undefined ? 'dead_letter' : 'pending';
     const availableAt = input.retryAt === undefined ? message.availableAt : input.retryAt;
     // Rebuilt without lease fields: exactOptionalPropertyTypes forbids assigning undefined.
     this.messages.set(message.outboxMessageId, {

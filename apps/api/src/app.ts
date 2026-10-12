@@ -19,7 +19,13 @@ import type {
   QuoteV1,
   QuoteStatusProjectionV1,
 } from '@eeeasy-pay/contracts';
-import { assertTransition, MoneyError, parseMinorUnits, quoteTotals, StateError } from '@eeeasy-pay/domain';
+import {
+  assertTransition,
+  MoneyError,
+  parseMinorUnits,
+  quoteTotals,
+  StateError,
+} from '@eeeasy-pay/domain';
 import {
   canonicalize,
   idempotencyKeyDigest,
@@ -130,12 +136,12 @@ function summarizeIssues(issues: readonly { readonly message: string }[]): strin
 
 function projectIntent(deps: ApiDeps, record: IntentRecord): PaymentIntentV1 {
   const stored =
-    record.currentQuoteId === undefined
-      ? null
-      : deps.quotes.findByQuoteId(record.currentQuoteId);
+    record.currentQuoteId === undefined ? null : deps.quotes.findByQuoteId(record.currentQuoteId);
   const nowIso = deps.clock.nowIso();
   const quoteStatus: QuoteStatusProjectionV1 =
-    stored === null ? 'unavailable' : projectQuoteStatus(stored.quote.expiresAt, nowIso).quoteStatus;
+    stored === null
+      ? 'unavailable'
+      : projectQuoteStatus(stored.quote.expiresAt, nowIso).quoteStatus;
   const canConfirm =
     stored !== null &&
     record.state === 'quoted' &&
@@ -196,7 +202,8 @@ async function createPaymentIntent(
       );
       return;
     }
-    const existing = replay.resourceRef === undefined ? null : deps.intents.peek(replay.resourceRef);
+    const existing =
+      replay.resourceRef === undefined ? null : deps.intents.peek(replay.resourceRef);
     if (existing === null) {
       await sendProblem(
         res,
@@ -340,9 +347,7 @@ async function confirmPaymentIntent(
     return;
   }
   const stored =
-    record.currentQuoteId === undefined
-      ? null
-      : deps.quotes.findByQuoteId(record.currentQuoteId);
+    record.currentQuoteId === undefined ? null : deps.quotes.findByQuoteId(record.currentQuoteId);
   if (stored === null) {
     await sendProblem(
       res,
