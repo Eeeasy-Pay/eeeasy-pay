@@ -208,8 +208,7 @@ describe('apps/api payment-intent routes (TICKET-003)', () => {
     const replayedIntent = PaymentIntentV1Schema.parse(await replay.json());
     expect(replayedIntent.paymentIntentId).toBe(firstIntent.paymentIntentId);
     const conflict = await createIntent(harness, {
-      key: 'key-1',
-      body: { ...VALID_CREATE_BODY, amountMinor: '2000' },
+      body: { ...VALID_CREATE_BODY, amountMinor: '2000', idempotencyKey: 'key-1' },
     });
     expect(conflict.status).toBe(409);
     const conflictProblem = ProblemDetailSchema.parse(await conflict.json());
