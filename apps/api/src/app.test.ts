@@ -113,11 +113,11 @@ async function startHarness(): Promise<Harness> {
     if (options?.body !== undefined) {
       headers['content-type'] = 'application/json';
     }
-    return fetch(baseUrl + path, {
-      method,
-      headers,
-      body: options?.body === undefined ? undefined : JSON.stringify(options.body),
-    });
+    const init: RequestInit = { method, headers };
+    if (options?.body !== undefined) {
+      init.body = JSON.stringify(options.body);
+    }
+    return fetch(baseUrl + path, init);
   };
   return { clock, intents, quotes, outbox, call };
 }
