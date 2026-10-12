@@ -9,7 +9,7 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
-    "test": "echo 'api: routes are implemented in TICKET-003' && exit 0"
+    "test": "vitest run"
   },
   "dependencies": {
     "@eeeasy-pay/contracts": "workspace:*",
@@ -18,7 +18,9 @@
     "@eeeasy-pay/ports": "workspace:*"
   },
   "devDependencies": {
+    "@eeeasy-pay/sponsor-dfsp-connector": "workspace:*",
     "@types/node": "^22.15.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
   }
 }
