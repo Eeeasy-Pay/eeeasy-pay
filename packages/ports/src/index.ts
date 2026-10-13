@@ -213,3 +213,161 @@ export interface InboxRepository {
 export interface TransactionBoundary {
   run<T>(operation: () => Promise<T>): Promise<T>;
 }
+
+// Quote persistence (TICKET-004) ------------------------------------------------
+
+/** Stored quote terms. Digests are hex strings; amounts are exact integer minor units. */
+export interface QuoteRecord {
+  readonly quoteId: string;
+  readonly paymentIntentId: string;
+  readonly providerKey: string;
+  readonly partnerQuoteRef: string;
+  readonly apiProfile: string;
+  readonly currency: string;
+  readonly requestedAmountMinor: bigint;
+  readonly quotedFeeMinor: bigint;
+  readonly payerDebitMinor: bigint;
+  readonly recipientAmountMinor: bigint;
+  readonly feeRuleVersion: string;
+  /** SHA-256 over the canonical quote terms (mirrors payment_quotes.binding_hash). */
+  readonly bindingDigest: string;
+  readonly issuedAt: string;
+  readonly expiresAt: string;
+}
+
+export interface QuoteInsert {
+  readonly quoteId: string;
+  readonly paymentIntentId: string;
+  readonly providerKey: string;
+  readonly partnerQuoteRef: string;
+  readonly apiProfile: string;
+  readonly currency: string;
+  readonly requestedAmountMinor: bigint;
+  readonly quotedFeeMinor: bigint;
+  readonly payerDebitMinor: bigint;
+  readonly recipientAmountMinor: bigint;
+  readonly feeRuleVersion: string;
+  /** SHA-256 over the request that produced the quote (mirrors request_fingerprint). */
+  readonly requestFingerprintDigest: string;
+  readonly bindingDigest: string;
+  readonly issuedAt: string;
+  readonly expiresAt: string;
+}
+
+export interface QuoteRepository {
+  insertQuote(quote: QuoteInsert): Promise<void>;
+  findQuoteById(quoteId: string): Promise<QuoteRecord | null>;
+}
+
+// Append-only payment event log (TICKET-004) --------------------------------------
+
+export interface PaymentEventAppend {
+  readonly paymentIntentId: string;
+  readonly eventType: string;
+  readonly schemaVersion: number;
+  readonly sourceSystem: string;
+  readonly externalEventId?: string;
+  readonly correlationId: string;
+  readonly causationId?: string;
+  readonly occurredAt?: string;
+  readonly previousState?: PaymentState;
+  readonly nextState?: PaymentState;
+  readonly payloadDigest: string;
+  readonly privacyClass: 'operational_minimal' | 'sensitive_reference';
+  readonly safeMetadata: Readonly<Record<string, unknown>>;
+}
+
+export interface PaymentEventRepository {
+  /** Append-only (payment_events is never updated or deleted). Returns the event id. */
+  appendEvent(event: PaymentEventAppend): Promise<string>;
+}
+
+// Quote-bound confirmation command (TICKET-004, ADR-006) ---------------------------
+
+export interface ConfirmPaymentIntentCommand {
+  readonly actorId: string;
+  readonly paymentIntentId: string;
+  readonly quoteId: string;
+  readonly quoteBindingDigest: string;
+  readonly requestDigest: string;
+  readonly idempotencyKeyDigest: string;
+  readonly authorizationEvidenceRef: string;
+  readonly correlationId: string;
+}
+
+export interface ConfirmPaymentIntentOutcome {
+  readonly replayed: boolean;
+  readonly paymentIntentId: string | null;
+  readonly state: string;
+}
+
+/**
+ * Atomic confirmation: idempotency record, intent projection, append-only event, and the
+ * durable outbox command commit in ONE database transaction
+ * (app_private.confirm_payment_intent, migration 202610060003).
+ */
+export interface PaymentCommandPort {
+  confirmPaymentIntent(command: ConfirmPaymentIntentCommand): Promise<ConfirmPaymentIntentOutcome>;
+}
+
+// Split invite redemption (TICKET-004) ---------------------------------------------
+
+export interface SplitInviteClaimPort {
+  /** 'claimed' on first redemption, 'already_claimed' when the same actor redeems again. */
+  claimInvite(input: {
+    readonly actorId: string;
+    readonly splitShareId: string;
+    readonly inviteTokenDigest: string;
+  }): Promise<'claimed' | 'already_claimed'>;
+}
+
+// Typed command errors, mapped from database SQLSTATEs by packages/persistence ------
+
+export class IdempotencyConflictError extends Error {
+  constructor() {
+    super('idempotency key reused with a different request');
+    this.name = 'IdempotencyConflictError';
+  }
+}
+
+export class InboxPayloadConflictError extends Error {
+  constructor() {
+    super('provider event id reused with a different payload hash');
+    this.name = 'InboxPayloadConflictError';
+  }
+}
+
+export class QuoteNotBindableError extends Error {
+  constructor() {
+    super('quote missing, expired, or not bound to intent');
+    this.name = 'QuoteNotBindableError';
+  }
+}
+
+export class PaymentIntentNotFoundError extends Error {
+  constructor() {
+    super('payment intent not found for actor');
+    this.name = 'PaymentIntentNotFoundError';
+  }
+}
+
+export class PaymentStateConflictError extends Error {
+  constructor() {
+    super('payment is not confirmable in current state');
+    this.name = 'PaymentStateConflictError';
+  }
+}
+
+export class RouteIneligibleError extends Error {
+  constructor() {
+    super('source link or recipient alias is no longer eligible');
+    this.name = 'RouteIneligibleError';
+  }
+}
+
+export class InviteUnavailableError extends Error {
+  constructor() {
+    super('invite unavailable');
+    this.name = 'InviteUnavailableError';
+  }
+}

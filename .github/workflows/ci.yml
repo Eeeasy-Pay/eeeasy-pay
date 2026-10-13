@@ -142,3 +142,55 @@ jobs:
           fi
           echo "ok: authenticated can call app_private.can_read_split_bill"
           echo "All RLS and grant probes passed." >> "$GITHUB_STEP_SUMMARY"
+
+  persistence:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: eeeasy_pay
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: eeeasy_pay
+      TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/eeeasy_pay
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Prepare synthetic auth schema and roles (CI-only fixture)
+        run: |
+          set -o pipefail
+          psql -v ON_ERROR_STOP=1 -f ci/db/prepare.sql 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Apply migrations in order
+        run: |
+          set -euo pipefail
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "applying $f"
+            if ! psql -v ON_ERROR_STOP=1 -f "$f" > /tmp/migration.log 2>&1; then
+              echo "::error title=Migration failed::$(basename "$f"): $(tail -c 300 /tmp/migration.log | tr '\n' ' ')"
+              tail -c 2000 /tmp/migration.log >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          done
+          echo "All migrations applied in order." >> "$GITHUB_STEP_SUMMARY"
+      - name: Persistence integration tests (TEST_DATABASE_URL, disposable database only)
+        run: pnpm --filter @eeeasy-pay/persistence run test:integration

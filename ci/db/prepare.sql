@@ -17,6 +17,12 @@ BEGIN
 END
 $$;
 
+-- Managed Supabase grants service_role BYPASSRLS; the reviewed migrations grant
+-- service_role direct table access alongside RLS policies on the assumption that it
+-- bypasses RLS (the real role does). Mirror that here so the fixture behaves like the
+-- managed environment for the persistence integration tests (ADR-016).
+ALTER ROLE service_role BYPASSRLS;
+
 CREATE SCHEMA IF NOT EXISTS auth;
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 

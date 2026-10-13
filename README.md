@@ -19,13 +19,13 @@ Read `docs/implementation/GUARDRAILS.md` before contributing.
 
 ## Repository layout
 
-- `apps/api` - product HTTP API (payment-intent routes landed in TICKET-003; split routes with TICKET-004) + versioned OpenAPI contract (`openapi/v1.yaml`, TICKET-002)
+- `apps/api` - product HTTP API (payment-intent routes landed in TICKET-003; split routes follow as a follow-up on top of the TICKET-004 repositories) + versioned OpenAPI contract (`openapi/v1.yaml`, TICKET-002)
 - `apps/worker` - restart-safe outbox processing and inbox projection (TICKET-005)
 - `packages/domain` - pure payment-state transitions, exact minor-unit money, deterministic splits
 - `packages/contracts` - zod-first V1 schemas, closed problem codes, mirrored into the OpenAPI wire contract (TICKET-002)
 - `packages/ports` - typed repository, clock, notification, and sponsor-DFSP connector interfaces
 - `packages/pal` - quote binding, idempotency fingerprints, expiry projection, event/state mapping
-- `packages/persistence` - narrow repository/transaction implementations (TICKET-004)
+- `packages/persistence` - narrow Postgres repositories + ambient transaction boundary over the reviewed migrations (TICKET-004); integration tests need `TEST_DATABASE_URL`
 - `packages/sponsor-dfsp-connector` - deterministic simulator only; no live connector
 - `infra/mojaloop` - operator-owned central Hub release inputs (TICKETS 009-010; reference only)
 - `supabase/migrations` - reviewed ordered SQL (Postgres; Supabase-compatible roles/RLS)
@@ -54,8 +54,17 @@ for f in $(ls supabase/migrations/*.sql | sort); do psql -v ON_ERROR_STOP=1 -f "
 psql -v ON_ERROR_STOP=1 -f ci/db/smoke.sql
 ```
 
+Persistence integration tests run only against a disposable local database prepared the
+same way (never a real or shared environment):
+
+```bash
+TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/eeeasy_pay \
+  pnpm --filter @eeeasy-pay/persistence run test:integration
+```
+
 ## Status
 
 Foundation + first vertical slice in progress. See `docs/implementation/TICKETS.md` for the
 ticket workflow used with the coding agent, and `docs/implementation/OPEN_DECISIONS.md` for
 the blockers that prevent any partner integration or real-money use.
+

@@ -8,7 +8,7 @@ Workflow for every ticket:
 4. Open a PR describing what changed, commands run, and results. The supervising engineer
    reviews and merges. Do not push to `main` directly.
 
-- **TICKET-001 Lint/format baseline — ✅ DONE (re-landed 2026-10-09; see ADR-015; the
+- **TICKET-001 Lint/format baseline â â DONE (re-landed 2026-10-09; see ADR-015; the
   squash-merge message records the verifying CI run).** ESLint 9 flat config and
   Prettier 3 with `pnpm run lint` / `pnpm run format:check` scripts and CI steps.
   The first landing (PR #4, squash `4348e85`, verifying run `37864335884`) was
@@ -18,13 +18,13 @@ Workflow for every ticket:
   `pnpm-lock.yaml` excluded from formatting (lockfile work is TICKET-008).
   Acceptance: lint and format checks pass in CI (PR events) and locally; no
   behavioral code changes.
-- **TICKET-002 Contracts + OpenAPI — ✅ DONE (ADR-013; the squash-merge message records the verifying CI run).** Flesh out `packages/contracts` with full Zod (or
+- **TICKET-002 Contracts + OpenAPI â â DONE (ADR-013; the squash-merge message records the verifying CI run).** Flesh out `packages/contracts` with full Zod (or
   equivalent) schemas for every V1 type and produce `apps/api/openapi/v1.yaml` covering
   `POST /v1/payment-intents`, `GET /v1/payment-intents/{id}`,
   `POST /v1/payment-intents/{id}/confirm`, status, and split routes, using the closed
   problem-code set. Acceptance: schema validation tests pass; OpenAPI lints; no route
   exposes scheme internals.
-- **TICKET-003 apps/api routes — ✅ DONE (2026-10-12; the squash-merge message records
+- **TICKET-003 apps/api routes â â DONE (2026-10-12; the squash-merge message records
   the verifying CI run).** Implement the product HTTP API: auth'd payment-intent
   creation with server-scoped idempotency, read-only status projections with
   `quoteStatus`/`canConfirm`, confirm command returning `202`, problem+correlation
@@ -33,11 +33,20 @@ Workflow for every ticket:
   Implementation notes: repositories are in-memory ports-shaped seams (TICKET-004
   swaps in Postgres over the reviewed migrations); bearer auth is structure-only
   (B-01); split-bill routes land with TICKET-004; the outbox worker is TICKET-005.
-- **TICKET-004 packages/persistence.** Implement narrow Postgres repositories and
+- **TICKET-004 packages/persistence — ✅ DONE (2026-10-13; the squash-merge message records
+  the verifying CI run; see ADR-016).** Implement narrow Postgres repositories and
   transaction boundaries over the reviewed migrations: payment intents, quotes,
-  idempotency, events, outbox claim/finish, inbox ingest, split claim. Acceptance:
-  concurrency tests prove single durable outbox command per confirmation and no duplicate
-  effects; RLS/grant paths tested for anon/authenticated/service roles.
+  idempotency, events, outbox claim/finish, inbox ingest, split claim. Acceptance met:
+  concurrency tests prove a single durable outbox command per confirmation and no
+  duplicate effects; RLS/grant paths tested for anon/authenticated/service roles in a
+  new `persistence` CI job (Postgres 16 service; integration tests via
+  `TEST_DATABASE_URL`, kept out of the plain `test` script). Notes: privileged writes
+  (confirm, outbox claim/finish, inbox ingest, split claim) go through the reviewed
+  `app_private` functions; the CI fixture grants the synthetic `service_role` BYPASSRLS
+  like managed Supabase (ADR-016). Split-bill HTTP routes remain open as a follow-up on
+  top of these repositories (the TICKET-003 note pointed here, but this ticket's own scope
+  is the persistence layer); apps/api keeps its in-memory seams until that follow-up
+  swaps in `@eeeasy-pay/persistence`.
 - **TICKET-005 apps/worker.** Restart-safe outbox processor using lease-based claiming,
   simulator connector only, explicit `timeout_unknown` handling (query original external
   ID; never re-submit with a new ID), inbox dedupe + hash-conflict quarantine, crash/restart
@@ -51,7 +60,7 @@ Workflow for every ticket:
 - **TICKET-008 Hardening + evidence.** Commit a verified pnpm lockfile, enable
   `--frozen-lockfile`, add an issue/PR templates if useful, and record all executed
   commands and results in `docs/implementation/TEST_EVIDENCE.md`. Visibility step SUPERSEDED 2026-10-09: the repository stays public
-  by owner decision (ADR-012; B-09 resolved) — no visibility action required.
+  by owner decision (ADR-012; B-09 resolved) â no visibility action required.
   Lockfile note: no `pnpm-lock.yaml` is currently on main (the only one ever
   committed arrived Prettier-reformatted via the reverted PR #4 and left with it);
   commit a freshly generated, unformatted lockfile and keep it excluded from
@@ -84,3 +93,4 @@ Workflow for every ticket:
   Synthetic data only; no stored balance; nothing hard-coded from the Sudan/SDG
   assumption. Acceptance: tests cover default-account invariants, link eligibility at
   intent creation and confirmation, and preview-is-not-authorization.
+
