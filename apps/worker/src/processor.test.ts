@@ -17,11 +17,7 @@ import type {
 } from '@eeeasy-pay/ports';
 import { WORKER_RECONCILIATION_EVENT, WORKER_SUBMISSION_EVENT } from '@eeeasy-pay/ports';
 import { sha256Hex } from '@eeeasy-pay/pal';
-import {
-  OutboxWorker,
-  SUBMIT_PAYMENT_COMMAND,
-  type OutboxWorkerOptions,
-} from './processor.ts';
+import { OutboxWorker, SUBMIT_PAYMENT_COMMAND, type OutboxWorkerOptions } from './processor.ts';
 
 class MutableClock implements Clock {
   private at: Date;
@@ -291,7 +287,10 @@ class FakeSponsor implements SponsorDfspPort {
       status,
       occurredAt: FIXED.toISOString(),
       ...(status === 'committed'
-        ? { evidenceSource: 'SIMULATOR' as const, evidenceRef: 'sim-evidence-' + externalTransferId }
+        ? {
+            evidenceSource: 'SIMULATOR' as const,
+            evidenceRef: 'sim-evidence-' + externalTransferId,
+          }
         : {}),
     };
   }

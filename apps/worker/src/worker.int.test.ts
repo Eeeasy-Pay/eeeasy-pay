@@ -61,9 +61,7 @@ interface OutboxRowView {
   last_error_code: string | null;
 }
 
-async function outboxRow(
-  paymentIntentId: string,
-): Promise<OutboxRowView | null> {
+async function outboxRow(paymentIntentId: string): Promise<OutboxRowView | null> {
   const result = await stores.db.query<OutboxRowView>(
     `SELECT outbox_message_id, command_type, state, attempts, last_error_code
        FROM public.outbox_messages
@@ -80,9 +78,7 @@ interface EventRowView {
   safe_metadata: Record<string, unknown>;
 }
 
-async function eventsFor(
-  paymentIntentId: string,
-): Promise<EventRowView[]> {
+async function eventsFor(paymentIntentId: string): Promise<EventRowView[]> {
   const result = await stores.db.query<EventRowView>(
     `SELECT event_type, source_system, external_event_id, safe_metadata
        FROM public.payment_events
@@ -167,9 +163,7 @@ maybeDescribe('OutboxWorker integration (disposable Postgres only)', () => {
     const events = await eventsFor(seeded.paymentIntentId);
     const submissions = events.filter((event) => event.source_system === 'worker-submission');
     expect(submissions).toHaveLength(1); // never resubmitted
-    const reconciliation = events.find(
-      (event) => event.source_system === 'worker-reconciliation',
-    );
+    const reconciliation = events.find((event) => event.source_system === 'worker-reconciliation');
     expect(reconciliation?.external_event_id).toBe(externalId); // the ORIGINAL id
     expect(reconciliation?.safe_metadata['query_status']).toBe('committed');
     expect(reconciliation?.safe_metadata['evidence_source']).toBe('SIMULATOR');
