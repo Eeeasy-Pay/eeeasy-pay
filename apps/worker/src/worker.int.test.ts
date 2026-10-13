@@ -96,7 +96,7 @@ maybeDescribe('OutboxWorker integration (disposable Postgres only)', () => {
     expect(before?.state).toBe('pending');
     expect(before?.command_type).toBe('submit_payment');
 
-    const sponsor = new SimulatorSponsorDfspConnector(systemClock, {});
+    const sponsor = new SimulatorSponsorDfspConnector(systemClock, { idPrefix: 'STX-E1' });
     const worker = new OutboxWorker(
       {
         outbox: stores.outbox,
@@ -116,7 +116,7 @@ maybeDescribe('OutboxWorker integration (disposable Postgres only)', () => {
     const submission = (await eventsFor(seeded.paymentIntentId)).find(
       (event) => event.source_system === 'worker-submission',
     );
-    expect(submission?.external_event_id).toMatch(/^STX-\d{6}$/);
+    expect(submission?.external_event_id).toMatch(/^STX-E1-\d{6}$/);
     expect(submission?.safe_metadata['outcome']).toBe('committed');
 
     // The worker does not project product payment state; scenario projections are
@@ -132,6 +132,7 @@ maybeDescribe('OutboxWorker integration (disposable Postgres only)', () => {
     const seeded = await confirmedIntent('worker-e2e-timeout');
     const sponsor = new SimulatorSponsorDfspConnector(systemClock, {
       script: ['timeout_unknown'],
+      idPrefix: 'STX-T2',
     });
     const worker = new OutboxWorker(
       {
@@ -154,9 +155,9 @@ maybeDescribe('OutboxWorker integration (disposable Postgres only)', () => {
       (event) => event.source_system === 'worker-submission',
     );
     const externalId = submission?.external_event_id;
-    expect(externalId).toMatch(/^STX-\d{6}$/);
+    expect(externalId).toMatch(/^STX-T2-\d{6}$/);
 
-    await sleep(1_100); // retry backoff elapses
+    await sleep(1_500); // retry backoff (1s) plus clock margin
     const second = await worker.runBatch();
     expect(second.published).toBe(1);
 
@@ -183,7 +184,7 @@ maybeDescribe('OutboxWorker integration (disposable Postgres only)', () => {
     expect(claimed).toHaveLength(1);
 
     // While the lease is held, a healthy worker claims nothing.
-    const sponsor = new SimulatorSponsorDfspConnector(systemClock, {});
+    const sponsor = new SimulatorSponsorDfspConnector(systemClock, { idPrefix: 'STX-C3' });
     const worker = new OutboxWorker(
       {
         outbox: stores.outbox,
@@ -197,7 +198,7 @@ maybeDescribe('OutboxWorker integration (disposable Postgres only)', () => {
     const duringLease = await worker.runBatch();
     expect(duringLease.claimed).toBe(0);
 
-    await sleep(5_300); // the crashed worker's lease expires
+    await sleep(5_500); // the crashed worker's 5s lease expires plus margin
     const batch = await worker.runBatch();
     expect(batch.published).toBe(1);
     const row = await outboxRow(seeded.paymentIntentId);

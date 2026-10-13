@@ -35,6 +35,13 @@ export interface SimulatorOptions {
    * NOT a fee schedule; real fees come from the partner profile (B-08).
    */
   readonly flatFeeMinor?: bigint;
+  /**
+   * Overrides the prefix of generated partner references (default: the per-kind prefix,
+   * e.g. 'STX' for transfers). Fixtures that share a disposable database set this so
+   * synthetic external ids stay unique: a fresh simulator restarts its sequence, and
+   * payment_events dedupes on (source_system, external_event_id).
+   */
+  readonly idPrefix?: string;
 }
 
 interface SubmissionRecord {
@@ -48,6 +55,7 @@ export class SimulatorSponsorDfspConnector implements SponsorDfspPort {
   private readonly script: readonly SimulatorScenario[];
   private readonly quoteValidityMs: number;
   private readonly flatFeeMinor: bigint;
+  private readonly idPrefix: string | undefined;
   private readonly submissions = new Map<string, SubmissionRecord>();
 
   constructor(
@@ -57,11 +65,12 @@ export class SimulatorSponsorDfspConnector implements SponsorDfspPort {
     this.script = options.script ?? ['success'];
     this.quoteValidityMs = options.quoteValidityMs ?? 60_000;
     this.flatFeeMinor = options.flatFeeMinor ?? 1n;
+    this.idPrefix = options.idPrefix;
   }
 
   private nextId(prefix: string): string {
     this.sequence += 1;
-    return prefix + '-' + String(this.sequence).padStart(6, '0');
+    return (this.idPrefix ?? prefix) + '-' + String(this.sequence).padStart(6, '0');
   }
 
   private nextScenario(): SimulatorScenario {

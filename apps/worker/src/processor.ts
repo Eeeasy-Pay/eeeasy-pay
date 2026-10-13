@@ -98,14 +98,6 @@ export function parseSubmitPaymentPayload(
 
 type Disposition = 'published' | 'pending_retry' | 'dead_letter' | 'lease_lost';
 
-const EMPTY_BATCH: BatchResult = {
-  claimed: 0,
-  published: 0,
-  pendingRetry: 0,
-  deadLettered: 0,
-  leaseLost: 0,
-};
-
 export class OutboxWorker {
   private readonly claimLimit: number;
   private readonly leaseSeconds: number;
@@ -162,16 +154,20 @@ export class OutboxWorker {
 
   /** Repeats runBatch until a batch claims nothing. Bounded by the dead-letter horizon. */
   async drain(): Promise<BatchResult> {
-    const total: BatchResult = { ...EMPTY_BATCH };
+    let claimed = 0;
+    let published = 0;
+    let pendingRetry = 0;
+    let deadLettered = 0;
+    let leaseLost = 0;
     for (;;) {
       const batch = await this.runBatch();
-      total.claimed += batch.claimed;
-      total.published += batch.published;
-      total.pendingRetry += batch.pendingRetry;
-      total.deadLettered += batch.deadLettered;
-      total.leaseLost += batch.leaseLost;
+      claimed += batch.claimed;
+      published += batch.published;
+      pendingRetry += batch.pendingRetry;
+      deadLettered += batch.deadLettered;
+      leaseLost += batch.leaseLost;
       if (batch.claimed === 0) {
-        return total;
+        return { claimed, published, pendingRetry, deadLettered, leaseLost };
       }
     }
   }
@@ -344,8 +340,8 @@ export class OutboxWorker {
   private async finish(
     message: OutboxMessageRecord,
     published: boolean,
-    retryAt: string | undefined,
-    errorCode: string | undefined,
+    retryAt: string | undefined = undefined,
+    errorCode: string | undefined = undefined,
   ): Promise<Disposition> {
     if (message.leaseToken === undefined) {
       return 'lease_lost';
