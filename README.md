@@ -20,7 +20,7 @@ Read `docs/implementation/GUARDRAILS.md` before contributing.
 ## Repository layout
 
 - `apps/api` - product HTTP API (payment-intent routes landed in TICKET-003; split routes follow as a follow-up on top of the TICKET-004 repositories) + versioned OpenAPI contract (`openapi/v1.yaml`, TICKET-002)
-- `apps/worker` - restart-safe outbox processing and inbox projection (TICKET-005)
+- `apps/worker` - restart-safe outbox processing and inbox ingest (landed in TICKET-005; event projection follows in TICKET-006)
 - `packages/domain` - pure payment-state transitions, exact minor-unit money, deterministic splits
 - `packages/contracts` - zod-first V1 schemas, closed problem codes, mirrored into the OpenAPI wire contract (TICKET-002)
 - `packages/ports` - typed repository, clock, notification, and sponsor-DFSP connector interfaces
@@ -60,6 +60,8 @@ same way (never a real or shared environment):
 ```bash
 TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/eeeasy_pay \
   pnpm --filter @eeeasy-pay/persistence run test:integration
+TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/eeeasy_pay \
+  pnpm --filter @eeeasy-pay/worker run test:integration
 ```
 
 ## Status

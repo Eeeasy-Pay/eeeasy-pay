@@ -47,10 +47,22 @@ Workflow for every ticket:
   top of these repositories (the TICKET-003 note pointed here, but this ticket's own scope
   is the persistence layer); apps/api keeps its in-memory seams until that follow-up
   swaps in `@eeeasy-pay/persistence`.
-- **TICKET-005 apps/worker.** Restart-safe outbox processor using lease-based claiming,
+- **TICKET-005 apps/worker — ✅ DONE (2026-10-13; the squash-merge message records
+  the verifying CI run).** Restart-safe outbox processor using lease-based claiming,
   simulator connector only, explicit `timeout_unknown` handling (query original external
   ID; never re-submit with a new ID), inbox dedupe + hash-conflict quarantine, crash/restart
-  recovery tests.
+  recovery tests. Acceptance met: unit tests with fakes cover lease-expiry crash recovery,
+  lost-lease finishes, evidence-write-failure dead-lettering (`evidence_write_failed`,
+  never auto-retried), and bounded retries with backoff; integration tests against the
+  disposable database cover end-to-end submit, `timeout_unknown` reconciliation by querying
+  the ORIGINAL external id, crashed-lease reclaim, inbox ingest + `markProcessed`, and
+  payload-conflict quarantine; the CI `persistence` job gained a worker integration-test
+  step. Notes: submission/reconciliation evidence is recorded in the append-only
+  `payment_events` log under the ORIGINAL external id (unique per source system, so
+  appends are idempotent); the worker performs no state projection (scenario work,
+  TICKET-006); within the port contract a crash between external submission and the
+  evidence append cannot be closed (no external id on our side) — a real adapter closes
+  it with a partner-side idempotency key, which the simulator does not model (B-01).
 - **TICKET-006 Simulator scenarios.** Deterministic end-to-end demo fixtures: success,
   rejection, expiry, duplicate request, ambiguous timeout followed by reconciliation; state
   labels distinguish `submitted`, `processing`, `unknown/needs reconciliation`,
