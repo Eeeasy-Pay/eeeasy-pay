@@ -24,11 +24,15 @@ Workflow for every ticket:
   `POST /v1/payment-intents/{id}/confirm`, status, and split routes, using the closed
   problem-code set. Acceptance: schema validation tests pass; OpenAPI lints; no route
   exposes scheme internals.
-- **TICKET-003 apps/api routes.** Implement the product HTTP API: auth'd payment-intent
+- **TICKET-003 apps/api routes — ✅ DONE (2026-10-12; the squash-merge message records
+  the verifying CI run).** Implement the product HTTP API: auth'd payment-intent
   creation with server-scoped idempotency, read-only status projections with
   `quoteStatus`/`canConfirm`, confirm command returning `202`, problem+correlation
   responses, and route authorization tests. Acceptance: success, rejection, expiry,
   duplicate-replay, and key-conflict cases tested; no product state mutation in GET.
+  Implementation notes: repositories are in-memory ports-shaped seams (TICKET-004
+  swaps in Postgres over the reviewed migrations); bearer auth is structure-only
+  (B-01); split-bill routes land with TICKET-004; the outbox worker is TICKET-005.
 - **TICKET-004 packages/persistence.** Implement narrow Postgres repositories and
   transaction boundaries over the reviewed migrations: payment intents, quotes,
   idempotency, events, outbox claim/finish, inbox ingest, split claim. Acceptance:

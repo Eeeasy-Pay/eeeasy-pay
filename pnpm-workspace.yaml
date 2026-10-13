@@ -2,3 +2,5 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+# No pnpm-lock.yaml is committed yet; CI installs with --no-frozen-lockfile
+# until TICKET-008 lands a verified lockfile.
