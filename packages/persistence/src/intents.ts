@@ -9,7 +9,7 @@
 import { quoteTotals, type PaymentState } from '@eeeasy-pay/domain';
 import type { PaymentIntentRecord, PaymentIntentRepository } from '@eeeasy-pay/ports';
 import { canonicalize, sha256Hex } from '@eeeasy-pay/pal';
-import { hexToBuffer, toHex, type DbLike } from './client.ts';
+import { hexToBuffer, jsonbParameter, toHex, type DbLike } from './client.ts';
 import type { PostgresTransactions } from './transactions.ts';
 
 interface IntentRow {
@@ -152,6 +152,13 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
     return row ? toIntentRecord(row) : null;
   }
 
+  private async selectIntent(paymentIntentId: string): Promise<IntentRow[]> {
+    return this.db<IntentRow[]>`
+      SELECT payment_intent_id, user_id, payment_state, currency, requested_amount_minor, current_quote_id
+      FROM public.payment_intents
+      WHERE payment_intent_id = ${paymentIntentId}::uuid`;
+  }
+
   /**
    * Creates the intent, binds the quote and records the transition to 'quoted' in one
    * transaction. Quote totals are the deterministic domain ones (payer debit =
@@ -279,7 +286,8 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
 
   /** Append-only event insert. Never updated, never deleted (GUARDRAILS.md #6). */
   async recordEvent(event: PaymentEventInput): Promise<string> {
-    const rows = await this.db<{ payment_event_id: string }[]>`
+    const db = this.db;
+    const rows = await db<{ payment_event_id: string }[]>`
       INSERT INTO public.payment_events
         (payment_intent_id, event_type, schema_version, source_system, correlation_id,
          previous_payment_state, next_payment_state, payload_sha256, privacy_class, safe_metadata)
@@ -288,7 +296,7 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
         ${event.previousState ?? null}::public.payment_state,
         ${event.nextState ?? null}::public.payment_state,
         ${hexToBuffer(sha256Hex(canonicalize(event.payload)))},
-        ${event.privacyClass}, ${event.payload}::jsonb)
+        ${event.privacyClass}, ${jsonbParameter(db, event.payload)})
       RETURNING payment_event_id`;
     const id = rows[0]?.payment_event_id;
     if (!id) {
@@ -297,3 +305,4 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
     return id;
   }
 }
+

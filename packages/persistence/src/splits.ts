@@ -105,16 +105,15 @@ export class PostgresSplitRepository {
   }
 
   /**
-   * Creates the bill as a draft, inserts its shares, then opens the bill — all in one
+   * Creates the bill as a draft, inserts its shares, then opens the bill â all in one
    * transaction so the deferred balance constraint (>=2 shares summing exactly to
-   * total_minor once open) is checked atomically at commit.
+   * total_minor once open) is checked atomically at commit. That constraint is the
+   * single source of truth: a malformed draft (too few or unbalanced shares) is
+   * rejected by the database with a check-violation error.
    */
   async createBill(
     input: CreateSplitBillInput,
   ): Promise<{ bill: StoredSplitBill; shares: StoredSplitShare[] }> {
-    if (input.shares.length < 2) {
-      throw new Error('an open split bill requires at least two shares');
-    }
     return this.tx.run(async () => {
       const db = this.db;
       await db`
@@ -199,3 +198,4 @@ export class PostgresSplitRepository {
     return row ? toShare(row) : null;
   }
 }
+

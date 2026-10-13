@@ -86,12 +86,18 @@ describe.skipIf(!databaseUrl)('RLS and grant probes', () => {
     probe: (reserved: Awaited<ReturnType<Sql['reserve']>>) => Promise<T>,
   ): Promise<T> {
     const sql = createPersistenceSql(databaseUrl);
+    let reserved: Awaited<ReturnType<Sql['reserve']>> | undefined;
     try {
-      const reserved = await sql.reserve();
+      reserved = await sql.reserve();
       await reserved`SELECT set_config('request.jwt.claim.sub', ${claimSub ?? ''}, false)`;
       await reserved`SELECT set_config('role', ${role}, false)`;
       return await probe(reserved);
     } finally {
+      // The reserved connection must go back to its (single-connection) pool
+      // before end(), otherwise end() waits on it until the test times out.
+      if (reserved) {
+        reserved.release();
+      }
       await sql.end({ timeout: 5 });
     }
   }
@@ -99,7 +105,7 @@ describe.skipIf(!databaseUrl)('RLS and grant probes', () => {
   it('denies anon on payment intents and on app_private functions', async () => {
     await asRole('anon', null, async (reserved) => {
       await expectPgError(
-        () => reserved`SELECT count(*)::int AS n FROM public.payment_intents`,
+        () => reserved`SELECT payment_intent_id FROM public.payment_intents`,
         '42501',
       );
       await expectPgError(() => reserved`SELECT app_private.claim_outbox('probe', 1, 5)`, '42501');
@@ -110,22 +116,22 @@ describe.skipIf(!databaseUrl)('RLS and grant probes', () => {
     await asRole('authenticated', alice().userId, async (reserved) => {
       const rows = await reserved<
         { n: number }[]
-      >`SELECT count(*)::int AS n FROM public.payment_intents`;
+      >`SELECT count(payment_intent_id)::int AS n FROM public.payment_intents`;
       expect(rows[0]?.n).toBe(1);
       const quotes = await reserved<
         { n: number }[]
-      >`SELECT count(*)::int AS n FROM public.payment_quotes`;
+      >`SELECT count(quote_id)::int AS n FROM public.payment_quotes`;
       expect(quotes[0]?.n).toBe(1);
       const events = await reserved<
         { n: number }[]
-      >`SELECT count(*)::int AS n FROM public.payment_events`;
+      >`SELECT count(payment_event_id)::int AS n FROM public.payment_events`;
       expect(events[0]?.n).toBe(2);
     });
     // Without a JWT claim the same role sees nothing.
     await asRole('authenticated', null, async (reserved) => {
       const rows = await reserved<
         { n: number }[]
-      >`SELECT count(*)::int AS n FROM public.payment_intents`;
+      >`SELECT count(payment_intent_id)::int AS n FROM public.payment_intents`;
       expect(rows[0]?.n).toBe(0);
     });
   });
@@ -147,7 +153,7 @@ describe.skipIf(!databaseUrl)('RLS and grant probes', () => {
       expect(own[0]?.ok).toBe(true);
       const bills = await reserved<
         { n: number }[]
-      >`SELECT count(*)::int AS n FROM public.split_bills`;
+      >`SELECT count(split_bill_id)::int AS n FROM public.split_bills`;
       expect(bills[0]?.n).toBe(1);
     });
     await asRole('authenticated', carol().userId, async (reserved) => {
@@ -156,7 +162,7 @@ describe.skipIf(!databaseUrl)('RLS and grant probes', () => {
       expect(foreign[0]?.ok).toBe(false);
       const bills = await reserved<
         { n: number }[]
-      >`SELECT count(*)::int AS n FROM public.split_bills`;
+      >`SELECT count(split_bill_id)::int AS n FROM public.split_bills`;
       expect(bills[0]?.n).toBe(0);
     });
   });
@@ -176,3 +182,4 @@ describe.skipIf(!databaseUrl)('RLS and grant probes', () => {
     });
   });
 });
+

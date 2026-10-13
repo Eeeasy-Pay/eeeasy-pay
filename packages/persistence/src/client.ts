@@ -8,12 +8,7 @@
 
 import postgres from 'postgres';
 
-export type Sql = ReturnType<typeof postgres>;
-
-/** Ambient client: the ambient transaction if one is open, otherwise the pool. */
-export type DbLike = Sql;
-
-export function createPersistenceSql(url: string): Sql {
+function openPersistenceSql(url: string) {
   return postgres(url, {
     types: {
       bigint: {
@@ -29,6 +24,21 @@ export function createPersistenceSql(url: string): Sql {
   });
 }
 
+/**
+ * Typed client. The ReturnType of this non-generic wrapper keeps the bigint custom
+ * type, so bigint parameters (every minor-unit amount) are accepted by the sql
+ * templates; ReturnType<typeof postgres> alone would erase it to Sql<{}> and reject
+ * them.
+ */
+export type Sql = ReturnType<typeof openPersistenceSql>;
+
+/** Ambient client: the ambient transaction if one is open, otherwise the pool. */
+export type DbLike = Sql;
+
+export function createPersistenceSql(url: string): Sql {
+  return openPersistenceSql(url);
+}
+
 /** Hex digest (64 chars) -> 32-byte Buffer for bytea parameters. */
 export function hexToBuffer(hex: string): Buffer {
   const trimmed = hex.startsWith('0x') ? hex.slice(2) : hex;
@@ -42,4 +52,17 @@ export function hexToBuffer(hex: string): Buffer {
 /** bytea column value (Buffer) -> hex digest at the port boundary. */
 export function toHex(value: Buffer): string {
   return value.toString('hex');
+}
+
+/**
+ * jsonb parameter for a safe payload object. postgres.js serializes jsonb
+ * parameters (oid 3802) with JSON.stringify, so the object is encoded exactly
+ * once; passing a pre-stringified string would double-encode it, and interpolating
+ * a raw object with a ::jsonb cast is rejected by the template types.
+ */
+export function jsonbParameter(
+  db: DbLike,
+  value: Readonly<Record<string, unknown>>,
+): postgres.Parameter {
+  return db.json(value as unknown as postgres.JSONValue);
 }

@@ -3,7 +3,7 @@
 // as the command that produced it (ADR-006); claim/finish are worker-side operations.
 
 import type { OutboxMessageRecord, OutboxRepository } from '@eeeasy-pay/ports';
-import { hexToBuffer, toHex, type DbLike } from './client.ts';
+import { hexToBuffer, jsonbParameter, toHex, type DbLike } from './client.ts';
 import type { PostgresTransactions } from './transactions.ts';
 
 interface OutboxRow {
@@ -60,13 +60,14 @@ export class PostgresOutboxRepository implements OutboxRepository {
     payloadDigest: string;
     safePayload: Readonly<Record<string, unknown>>;
   }): Promise<string> {
-    const rows = await this.db<{ outbox_message_id: string }[]>`
+    const db = this.db;
+    const rows = await db<{ outbox_message_id: string }[]>`
       INSERT INTO public.outbox_messages
         (aggregate_type, aggregate_id, command_type, schema_version,
          idempotency_key_sha256, payload_sha256, safe_payload)
       VALUES (${input.aggregateType}, ${input.aggregateId}::uuid, ${input.commandType},
         ${input.schemaVersion}, ${hexToBuffer(input.idempotencyKeyDigest)},
-        ${hexToBuffer(input.payloadDigest)}, ${input.safePayload}::jsonb)
+        ${hexToBuffer(input.payloadDigest)}, ${jsonbParameter(db, input.safePayload)})
       RETURNING outbox_message_id`;
     const id = rows[0]?.outbox_message_id;
     if (!id) {
@@ -100,3 +101,4 @@ export class PostgresOutboxRepository implements OutboxRepository {
     return rows[0]?.ok === true;
   }
 }
+

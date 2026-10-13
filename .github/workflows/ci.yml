@@ -51,7 +51,20 @@ jobs:
       - name: Format check
         run: pnpm run format:check
       - name: Typecheck
-        run: pnpm run typecheck
+        run: |
+          set -o pipefail
+          if ! pnpm run typecheck > /tmp/typecheck.log 2>&1; then
+            echo "typecheck failed; tsc tail emitted as error annotations"
+            tail -c 7000 /tmp/typecheck.log \
+              | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' -e 's/\r//g' \
+              | tr '\n' '@' | fold -w 690 | head -10 > /tmp/typecheck-chunks.txt
+            i=0
+            while IFS= read -r chunk; do
+              i=$((i + 1))
+              echo "::error title=Typecheck failed (part ${i})::${chunk}"
+            done < /tmp/typecheck-chunks.txt
+            exit 1
+          fi
       - name: Unit tests
         run: pnpm run test
       - name: Build
@@ -206,3 +219,4 @@ jobs:
             done < /tmp/persistence-chunks.txt
             exit 1
           fi
+

@@ -3,7 +3,7 @@
 // function; a CHANGED payload under the same event id is rejected (ADR-006).
 
 import type { InboxRepository } from '@eeeasy-pay/ports';
-import { hexToBuffer, type DbLike } from './client.ts';
+import { hexToBuffer, jsonbParameter, type DbLike } from './client.ts';
 import type { PostgresTransactions } from './transactions.ts';
 
 export class PostgresInboxRepository implements InboxRepository {
@@ -36,7 +36,7 @@ export class PostgresInboxRepository implements InboxRepository {
         ${event.providerKey}, ${event.providerEventId}, ${hexToBuffer(event.payloadDigest)},
         ${event.schemaVersion}, ${event.paymentIntentId ?? null}::uuid,
         ${event.correlationId ?? null}::uuid, ${event.authenticatedPrincipal},
-        ${event.normalizedPayload}::jsonb) AS id`;
+        ${jsonbParameter(db, event.normalizedPayload)}) AS id`;
     const id = rows[0]?.id;
     if (!id) {
       throw new Error('ingest_provider_event returned no id');
@@ -44,3 +44,4 @@ export class PostgresInboxRepository implements InboxRepository {
     return { inboxEventId: id, replayed: existing.length > 0 };
   }
 }
+

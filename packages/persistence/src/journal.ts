@@ -55,7 +55,7 @@ export class PostgresJournalRepository {
       SELECT app_private.post_balanced_journal(
         ${input.currency}, ${input.sourceSystem}, ${input.externalReference ?? null},
         ${input.eventKind}, ${hexToBuffer(input.idempotencyKeyDigest)},
-        ${JSON.stringify(payload)}::jsonb) AS id`;
+        ${db.json(payload)}) AS id`;
     const id = rows[0]?.id;
     if (!id) {
       throw new Error('post_balanced_journal returned no id');
@@ -63,3 +63,4 @@ export class PostgresJournalRepository {
     return { journalTransactionId: id, replayed: existing.length > 0 };
   }
 }
+
