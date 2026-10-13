@@ -12,9 +12,7 @@
 
 export { createPersistenceSql, hexToBuffer, toHex, type DbLike, type Sql } from './client.ts';
 export { PostgresTransactions } from './transactions.ts';
-export {
-  PostgresIdempotencyRepository,
-} from './idempotency.ts';
+export { PostgresIdempotencyRepository } from './idempotency.ts';
 export {
   PostgresPaymentIntentRepository,
   type ConfirmIntentInput,
@@ -33,8 +31,4 @@ export {
   type StoredSplitBill,
   type StoredSplitShare,
 } from './splits.ts';
-export {
-  PostgresJournalRepository,
-  type JournalLine,
-  type PostJournalInput,
-} from './journal.ts';
+export { PostgresJournalRepository, type JournalLine, type PostJournalInput } from './journal.ts';

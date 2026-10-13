@@ -76,7 +76,11 @@ export class PostgresIdempotencyRepository implements IdempotencyRepository {
     await this.mark(input, 'completed');
   }
 
-  async markFailed(input: { actorId: string; operation: string; keyDigest: string }): Promise<void> {
+  async markFailed(input: {
+    actorId: string;
+    operation: string;
+    keyDigest: string;
+  }): Promise<void> {
     await this.mark(input, 'failed');
   }
 

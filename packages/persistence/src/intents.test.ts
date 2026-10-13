@@ -109,7 +109,9 @@ describe.skipIf(!databaseUrl)('payment intent persistence', () => {
     });
     const record = await h.intents.findOwnedById(quoted.intentId, alice.userId);
     expect(record?.state).toBe('user_authorized');
-    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(1);
+    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(
+      1,
+    );
     expect(await countRows(h, 'idempotency_records')).toBe(1);
     const quote = await h.intents.findCurrentQuote(quoted.intentId);
     expect(quote?.bindingDigest).toBe(quoted.bindingDigest);
@@ -142,7 +144,9 @@ describe.skipIf(!databaseUrl)('payment intent persistence', () => {
     await expectPgError(async () => {
       throw rejected?.reason ?? new Error('missing rejection');
     }, '55000');
-    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(1);
+    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(
+      1,
+    );
     expect(await countRows(h, 'idempotency_records')).toBe(1);
     const record = await h.intents.findOwnedById(quoted.intentId, alice.userId);
     expect(record?.state).toBe('user_authorized');
@@ -168,14 +172,18 @@ describe.skipIf(!databaseUrl)('payment intent persistence', () => {
     expect(first.replayed).toBe(false);
     const replay = await h.intents.confirmPaymentIntent(input);
     expect(replay).toMatchObject({ paymentIntentId: quoted.intentId, replayed: true });
-    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(1);
+    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(
+      1,
+    );
     // Parallel same-key confirms also stay single-effect.
     const settled = await Promise.allSettled([
       h.intents.confirmPaymentIntent(input),
       h.intents.confirmPaymentIntent(input),
     ]);
     expect(settled.every((s) => s.status === 'fulfilled')).toBe(true);
-    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(1);
+    expect(await countRows(h, 'outbox_messages', "aggregate_id = '" + quoted.intentId + "'")).toBe(
+      1,
+    );
   });
 
   it('rejects key reuse with a different request', async () => {
@@ -216,7 +224,10 @@ describe.skipIf(!databaseUrl)('payment intent persistence', () => {
       authorizationEvidenceRef: 'authz-simulator-' + quoted.intentId,
       correlationId: testUuid(),
     });
-    await expectPgError(() => h.intents.confirmPaymentIntent(confirmInput(bob.userId, quoted.bindingDigest)), '42501');
+    await expectPgError(
+      () => h.intents.confirmPaymentIntent(confirmInput(bob.userId, quoted.bindingDigest)),
+      '42501',
+    );
     await expectPgError(
       () => h.intents.confirmPaymentIntent(confirmInput(alice.userId, sha256Hex('wrong-binding'))),
       '22023',

@@ -72,7 +72,9 @@ describe.skipIf(!databaseUrl)('inbox persistence', () => {
     ]);
     expect(settled.every((s) => s.status === 'fulfilled')).toBe(true);
     const ids = settled
-      .filter((s): s is PromiseFulfilledResult<{ inboxEventId: string }> => s.status === 'fulfilled')
+      .filter(
+        (s): s is PromiseFulfilledResult<{ inboxEventId: string }> => s.status === 'fulfilled',
+      )
       .map((s) => s.value.inboxEventId);
     expect(new Set(ids).size).toBe(1);
     expect(await countRows(h, 'inbox_events')).toBe(1);

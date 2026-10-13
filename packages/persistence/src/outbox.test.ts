@@ -77,7 +77,9 @@ describe.skipIf(!databaseUrl)('outbox persistence', () => {
     expect(message.safePayload).toEqual(safePayload);
     expect(message.availableAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     // A second claim finds nothing available.
-    expect(await h.outbox.claim({ workerId: 'worker-2', limit: 5, leaseSeconds: 60 })).toHaveLength(0);
+    expect(await h.outbox.claim({ workerId: 'worker-2', limit: 5, leaseSeconds: 60 })).toHaveLength(
+      0,
+    );
     // Wrong lease token must not finish the message.
     const wrongToken = await h.outbox.finish({
       outboxMessageId: messageId,
@@ -97,7 +99,9 @@ describe.skipIf(!databaseUrl)('outbox persistence', () => {
     const states = await h.sql<{ state: string }[]>`
       SELECT state FROM public.outbox_messages WHERE outbox_message_id = ${messageId}::uuid`;
     expect(states[0]?.state).toBe('published');
-    expect(await h.outbox.claim({ workerId: 'worker-1', limit: 5, leaseSeconds: 60 })).toHaveLength(0);
+    expect(await h.outbox.claim({ workerId: 'worker-1', limit: 5, leaseSeconds: 60 })).toHaveLength(
+      0,
+    );
   });
 
   it('retries with a backoff schedule and dead-letters when no retry is possible', async () => {

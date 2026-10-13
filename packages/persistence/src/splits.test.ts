@@ -53,7 +53,11 @@ describe.skipIf(!databaseUrl)('split persistence', () => {
     return user;
   }
 
-  function inviteShares(tokenKeys: readonly string[], amounts: readonly bigint[], expiresAt: string) {
+  function inviteShares(
+    tokenKeys: readonly string[],
+    amounts: readonly bigint[],
+    expiresAt: string,
+  ) {
     return tokenKeys.map((tokenKey, index) => ({
       amountMinor: amounts[index] ?? 1n,
       inviteTokenDigest: sha256Hex('invite:' + tokenKey),

@@ -45,7 +45,11 @@ describe.skipIf(!databaseUrl)('idempotency persistence', () => {
     const first = await h.idempotency.reserve(input);
     expect(first).toEqual({ replayed: false, requestMatched: true });
     const replay = await h.idempotency.reserve(input);
-    expect(replay).toEqual({ replayed: true, requestMatched: true, resourceRef: input.resourceRef });
+    expect(replay).toEqual({
+      replayed: true,
+      requestMatched: true,
+      resourceRef: input.resourceRef,
+    });
   });
 
   it('flags key reuse with a different request', async () => {
@@ -86,7 +90,11 @@ describe.skipIf(!databaseUrl)('idempotency persistence', () => {
       requestDigest: sha256Hex('request-body-3'),
     });
     expect(sameKeyOtherActor.replayed).toBe(false);
-    await h.idempotency.markAccepted({ actorId: actor, operation: 'create-payment-intent', keyDigest: key });
+    await h.idempotency.markAccepted({
+      actorId: actor,
+      operation: 'create-payment-intent',
+      keyDigest: key,
+    });
     const afterAccept = await h.idempotency.reserve({
       actorId: actor,
       operation: 'create-payment-intent',
@@ -94,13 +102,21 @@ describe.skipIf(!databaseUrl)('idempotency persistence', () => {
       requestDigest: sha256Hex('request-body-3'),
     });
     expect(afterAccept.replayed).toBe(true);
-    await h.idempotency.markCompleted({ actorId: actor, operation: 'create-payment-intent', keyDigest: key });
+    await h.idempotency.markCompleted({
+      actorId: actor,
+      operation: 'create-payment-intent',
+      keyDigest: key,
+    });
     const rows = await h.sql<{ record_state: string }[]>`
       SELECT record_state FROM public.idempotency_records
       WHERE actor_user_id = ${actor}::uuid AND operation = 'create-payment-intent'`;
     expect(rows).toHaveLength(1);
     expect(rows[0]?.record_state).toBe('completed');
-    await h.idempotency.markFailed({ actorId: actor, operation: 'create-payment-intent', keyDigest: key });
+    await h.idempotency.markFailed({
+      actorId: actor,
+      operation: 'create-payment-intent',
+      keyDigest: key,
+    });
     const afterFail = await h.idempotency.reserve({
       actorId: actor,
       operation: 'create-payment-intent',

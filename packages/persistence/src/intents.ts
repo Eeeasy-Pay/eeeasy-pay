@@ -140,7 +140,10 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
     return row ? toIntentRecord(row) : null;
   }
 
-  async findOwnedById(paymentIntentId: string, actorId: string): Promise<PaymentIntentRecord | null> {
+  async findOwnedById(
+    paymentIntentId: string,
+    actorId: string,
+  ): Promise<PaymentIntentRecord | null> {
     const rows = await this.db<IntentRow[]>`
       SELECT payment_intent_id, user_id, payment_state, currency, requested_amount_minor, current_quote_id
       FROM public.payment_intents
@@ -155,7 +158,11 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
    * requested + fee, recipient receives the requested amount; no FX is invented).
    */
   async createIntentWithQuote(input: CreateIntentWithQuoteInput): Promise<PaymentIntentRecord> {
-    const totals = quoteTotals(input.currency, input.requestedAmountMinor, input.quote.quotedFeeMinor);
+    const totals = quoteTotals(
+      input.currency,
+      input.requestedAmountMinor,
+      input.quote.quotedFeeMinor,
+    );
     return this.tx.run(async () => {
       const db = this.db;
       await db`
@@ -224,7 +231,11 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
         ${hexToBuffer(input.idempotencyKeyDigest)}, ${input.authorizationEvidenceRef},
         ${input.correlationId}::uuid) AS result`;
     const result = rows[0]?.result;
-    if (!result || typeof result.payment_intent_id !== 'string' || typeof result.state !== 'string') {
+    if (
+      !result ||
+      typeof result.payment_intent_id !== 'string' ||
+      typeof result.state !== 'string'
+    ) {
       throw new Error('confirm_payment_intent returned an unexpected envelope');
     }
     return {

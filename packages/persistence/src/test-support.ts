@@ -138,7 +138,9 @@ export async function expectPgError(call: () => Promise<unknown>, code: string):
 
 export async function countRows(h: Harness, table: string, where?: string): Promise<number> {
   const rows = (await h.sql.unsafe(
-    'SELECT count(*)::int AS n FROM public.' + table + (where === undefined ? '' : ' WHERE ' + where),
+    'SELECT count(*)::int AS n FROM public.' +
+      table +
+      (where === undefined ? '' : ' WHERE ' + where),
   )) as unknown as Array<{ n: number }>;
   return rows[0]?.n ?? 0;
 }
@@ -151,10 +153,14 @@ export interface QuotedIntent {
 }
 
 /** Creates a valid, freshly quoted intent for the given seeded user. */
-export async function seedQuotedIntent(h: Harness, user: SeedUser, options?: {
-  expiresAt?: string;
-  issuedAt?: string;
-}): Promise<QuotedIntent> {
+export async function seedQuotedIntent(
+  h: Harness,
+  user: SeedUser,
+  options?: {
+    expiresAt?: string;
+    issuedAt?: string;
+  },
+): Promise<QuotedIntent> {
   const intentId = testUuid();
   const quoteId = testUuid();
   const now = Date.now();

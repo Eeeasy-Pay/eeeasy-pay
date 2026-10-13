@@ -109,7 +109,9 @@ export class PostgresSplitRepository {
    * transaction so the deferred balance constraint (>=2 shares summing exactly to
    * total_minor once open) is checked atomically at commit.
    */
-  async createBill(input: CreateSplitBillInput): Promise<{ bill: StoredSplitBill; shares: StoredSplitShare[] }> {
+  async createBill(
+    input: CreateSplitBillInput,
+  ): Promise<{ bill: StoredSplitBill; shares: StoredSplitShare[] }> {
     if (input.shares.length < 2) {
       throw new Error('an open split bill requires at least two shares');
     }
