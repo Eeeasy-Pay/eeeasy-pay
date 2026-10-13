@@ -207,15 +207,21 @@ describe('confirm command (atomic, single-threaded)', () => {
       issuedAt: new Date(now - 120_000).toISOString(),
       expiresAt: new Date(now - 60_000).toISOString(),
     });
-    await expect(
-      stores.commands.confirmPaymentIntent(confirmCommand(seeded, USER_A, 'confirm-expired')),
-    ).rejects.toBeInstanceOf(QuoteNotBindableError);
+    const command = confirmCommand(seeded, USER_A, 'confirm-expired');
+    await expect(stores.commands.confirmPaymentIntent(command)).rejects.toBeInstanceOf(
+      QuoteNotBindableError,
+    );
     const intent = await stores.intents.findOwnedById(seeded.paymentIntentId, USER_A);
     expect(intent?.state).toBe('quoted');
     expect(
       await count('FROM public.outbox_messages WHERE aggregate_id = $1', [seeded.paymentIntentId]),
     ).toBe(0);
-    expect(await count('FROM public.idempotency_records WHERE actor_user_id = $1', [USER_A])).toBe(0);
+    // Atomic rollback: the failed attempt left no idempotency record for this key.
+    expect(
+      await count('FROM public.idempotency_records WHERE key_sha256 = $1', [
+        Buffer.from(command.idempotencyKeyDigest, 'hex'),
+      ]),
+    ).toBe(0);
   });
 });
 

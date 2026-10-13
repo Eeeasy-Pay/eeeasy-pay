@@ -3,7 +3,6 @@ import { Pool } from 'pg';
 import type { Db } from './db.ts';
 import { InboxPayloadConflictError } from '@eeeasy-pay/ports';
 import { sha256Hex } from '@eeeasy-pay/pal';
-import { bufferToHex } from './hex.ts';
 import { deterministicId, seedQuotedIntent, seedUser } from './int-helpers.ts';
 import { createPersistenceStores } from './stores.ts';
 
@@ -46,7 +45,6 @@ describe('payment event repository', () => {
   it('appends events and enforces external event id uniqueness', async () => {
     await seedUser(db, USER_M);
     const seeded = await seedQuotedIntent(db, stores, { userId: USER_M, ref: 'events-intent' });
-    intentId = seeded.paymentIntentId;
 
     const eventId = await stores.events.appendEvent({
       paymentIntentId: seeded.paymentIntentId,
