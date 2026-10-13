@@ -1,5 +1,6 @@
 import { PaymentStateConflictError } from '@eeeasy-pay/ports';
-import type { PaymentIntentRecord, PaymentIntentRepository, PaymentState } from '@eeeasy-pay/ports';
+import type { PaymentState } from '@eeeasy-pay/domain';
+import type { PaymentIntentRecord, PaymentIntentRepository } from '@eeeasy-pay/ports';
 import type { Db } from './db.ts';
 
 export interface PaymentIntentCreateInput {
