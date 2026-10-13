@@ -81,11 +81,11 @@
 - **ADR-014 Viability direction: Sudan-only market, partner-led real-money path.**
   Owner decisions (2026-10-09): the initial market is Sudan only; real-money operation
   rides on a licensed partner (bank or mobile-money provider) instead of the
-  organization’s own central-bank license for now; the owner has no existing
+  organizationâs own central-bank license for now; the owner has no existing
   bank/operator relationships yet, so partner outreach is the critical owner-side
   action. Agreed roadmap: (0) simulator-complete core platform, (1) partner sandbox
   integration behind `packages/ports` once a partner agreement exists (B-01), (2)
-  limited real-money pilot under the partner’s license, (3) production scale-out.
+  limited real-money pilot under the partnerâs license, (3) production scale-out.
   First milestone: partner sandbox integration. Nothing here authorizes real money,
   live credentials, or live integration; the regulatory structure must be validated by
   Sudanese counsel before any agreement is signed.
@@ -97,3 +97,19 @@
   build, secret scan), so a push event can never rewrite the tree mid-run (the
   reason PR #4 was reverted by PR #5). `pnpm-lock.yaml` stays excluded from
   formatting; a verified lockfile is committed separately in TICKET-008.
+- **ADR-016 Persistence layer: node-postgres, ambient transactions, and a BYPASSRLS CI
+  fixture.** TICKET-004 implements the narrow repository ports with `pg` 8.x (no ORM).
+  Repositories run through one `Db` surface with an AsyncLocalStorage transaction boundary:
+  `PostgresTransactionBoundary.run()` does BEGIN/COMMIT/ROLLBACK on a dedicated client and
+  rejects nested transactions, so a command and its outbox enqueue commit together
+  (ADR-006). Privileged writes (quote-bound confirmation, outbox claim/finish, inbox ingest,
+  split invite claim) call ONLY the reviewed `app_private` SECURITY DEFINER functions, keeping
+  the migrations' grants as the single privileged write path; digests cross the boundary as
+  hex strings bound as bytea. Integration tests run only against a disposable database via
+  `TEST_DATABASE_URL` (new `persistence` CI job with a Postgres 16 service); the plain
+  `test` script stays DB-free. Because the reviewed migrations grant `service_role` direct
+  table access alongside RLS policies — which only makes sense if `service_role` bypasses
+  RLS, as it does in managed Supabase — the CI-only fixture `ci/db/prepare.sql` now sets
+  `ALTER ROLE service_role BYPASSRLS`. The reviewed migrations themselves stay untouched
+  (forward-only rule); this mirrors managed-environment behavior in the fixture only.
+
