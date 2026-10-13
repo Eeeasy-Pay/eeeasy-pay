@@ -9,7 +9,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
-    "test": "echo 'worker: implemented in TICKET-005' && exit 0"
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.config.int.ts"
   },
   "dependencies": {
     "@eeeasy-pay/domain": "workspace:*",
@@ -17,7 +18,12 @@
     "@eeeasy-pay/ports": "workspace:*"
   },
   "devDependencies": {
+    "@eeeasy-pay/persistence": "workspace:*",
+    "@eeeasy-pay/sponsor-dfsp-connector": "workspace:*",
     "@types/node": "^22.15.0",
-    "typescript": "^5.8.0"
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
   }
 }

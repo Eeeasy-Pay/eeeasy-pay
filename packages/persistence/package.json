@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./int-helpers": "./src/int-helpers.ts",
+    "./int-setup": "./src/int-setup.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

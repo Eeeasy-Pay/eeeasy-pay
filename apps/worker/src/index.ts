@@ -1,10 +1,28 @@
-// Worker placeholder. Restart-safe outbox processing is implemented in TICKET-005
-// (docs/implementation/TICKETS.md).
+// Restart-safe outbox processing and inbox projection (TICKET-005). Simulator-only: the
+// only SponsorDfspPort implementation in this repository is the deterministic simulator
+// (OPEN_DECISIONS.md B-01), and nothing here moves money or implies settlement
+// (GUARDRAILS.md #2, #3).
 
-export const WORKER_TICKET = 'TICKET-005' as const;
+export {
+  OutboxWorker,
+  parseSubmitPaymentPayload,
+  SUBMIT_PAYMENT_COMMAND,
+  type BatchResult,
+  type OutboxWorkerDeps,
+  type OutboxWorkerOptions,
+  type SubmitPaymentPayload,
+  type WorkerEventStore,
+} from './processor.ts';
+export {
+  InboxIngestor,
+  type InboxIngestDeps,
+  type InboxIngestInput,
+  type InboxIngestResult,
+  type WorkerInboxStore,
+} from './inbox.ts';
 
 /**
- * Invariants the implementation must preserve (ADR-006, GUARDRAILS.md #2, #4):
+ * Invariants the implementation preserves (ADR-006, GUARDRAILS.md #2, #4):
  */
 export const WORKER_INVARIANTS = [
   'processes only durable outbox commands claimed through lease-based claiming',
