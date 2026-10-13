@@ -167,7 +167,11 @@ describe('outbox claim/finish', () => {
         errorCode: 'sim_transient',
       }),
     ).resolves.toBe(true);
-    const row = await db.query<{ state: string; available_at: Date; last_error_code: string | null }>(
+    const row = await db.query<{
+      state: string;
+      available_at: Date;
+      last_error_code: string | null;
+    }>(
       'SELECT state, available_at, last_error_code FROM public.outbox_messages WHERE outbox_message_id = $1',
       [message.outboxMessageId],
     );

@@ -40,7 +40,9 @@ function toRecord(row: IntentRow): PaymentIntentRecord {
   };
 }
 
-export class PostgresPaymentIntentRepository implements PaymentIntentRepository, PaymentIntentWriter {
+export class PostgresPaymentIntentRepository
+  implements PaymentIntentRepository, PaymentIntentWriter
+{
   constructor(private readonly db: Db) {}
 
   async findById(paymentIntentId: string): Promise<PaymentIntentRecord | null> {
@@ -56,7 +58,10 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository,
    * Ownership-scoped lookup doubles as enumeration resistance: another actor's intent is
    * indistinguishable from a missing one (same null, no row is read).
    */
-  async findOwnedById(paymentIntentId: string, actorId: string): Promise<PaymentIntentRecord | null> {
+  async findOwnedById(
+    paymentIntentId: string,
+    actorId: string,
+  ): Promise<PaymentIntentRecord | null> {
     const result = await this.db.query<IntentRow>(
       `SELECT ${SELECT_COLUMNS}
          FROM public.payment_intents

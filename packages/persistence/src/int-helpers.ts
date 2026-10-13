@@ -17,10 +17,10 @@ export function deterministicId(kind: string, ref: string): string {
 }
 
 export async function seedUser(db: Db, userId: string): Promise<void> {
-  await db.query(
-    'INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
-    [userId, userId + '@simulator.invalid'],
-  );
+  await db.query('INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
+    userId,
+    userId + '@simulator.invalid',
+  ]);
 }
 
 export async function seedActiveBankLink(db: Db, userId: string, ref: string): Promise<string> {
@@ -176,7 +176,11 @@ export async function seedOpenSplitBill(
        VALUES ($1, $2, $3, $4, 1000)`,
     [splitBillId, ownerUserId, 'sim split ' + ref, CURRENCY],
   );
-  const shares: Array<{ splitShareId: string; participantUserId: string | null; inviteTokenDigest: string }> = [];
+  const shares: Array<{
+    splitShareId: string;
+    participantUserId: string | null;
+    inviteTokenDigest: string;
+  }> = [];
   for (const part of ['a', 'b']) {
     const splitShareId = deterministicId('split-share', ref + '-' + part);
     const inviteTokenDigest = sha256Hex('invite-token:' + ref + ':' + part);
@@ -188,9 +192,8 @@ export async function seedOpenSplitBill(
     );
     shares.push({ splitShareId, participantUserId: null, inviteTokenDigest });
   }
-  await db.query(
-    'UPDATE public.split_bills SET split_state = \'open\' WHERE split_bill_id = $1',
-    [splitBillId],
-  );
+  await db.query("UPDATE public.split_bills SET split_state = 'open' WHERE split_bill_id = $1", [
+    splitBillId,
+  ]);
   return { splitBillId, shares };
 }

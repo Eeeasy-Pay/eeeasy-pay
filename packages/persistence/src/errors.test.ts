@@ -18,15 +18,15 @@ function pgError(code: string, message: string): Error {
 
 describe('mapDbError (reviewed SQLSTATE signatures)', () => {
   it('maps 22023 idempotency key reuse', () => {
-    expect(mapDbError(pgError('22023', 'idempotency key reused with different request'))).toBeInstanceOf(
-      IdempotencyConflictError,
-    );
+    expect(
+      mapDbError(pgError('22023', 'idempotency key reused with different request')),
+    ).toBeInstanceOf(IdempotencyConflictError);
   });
 
   it('maps 22023 quote-not-bindable', () => {
-    expect(mapDbError(pgError('22023', 'quote missing, expired, or not bound to intent'))).toBeInstanceOf(
-      QuoteNotBindableError,
-    );
+    expect(
+      mapDbError(pgError('22023', 'quote missing, expired, or not bound to intent')),
+    ).toBeInstanceOf(QuoteNotBindableError);
   });
 
   it('maps 22023 inbox payload conflict', () => {
@@ -42,13 +42,15 @@ describe('mapDbError (reviewed SQLSTATE signatures)', () => {
   });
 
   it('maps 42501 invite-unavailable', () => {
-    expect(mapDbError(pgError('42501', 'invite unavailable'))).toBeInstanceOf(InviteUnavailableError);
+    expect(mapDbError(pgError('42501', 'invite unavailable'))).toBeInstanceOf(
+      InviteUnavailableError,
+    );
   });
 
   it('maps 55000 state conflict', () => {
-    expect(mapDbError(pgError('55000', 'payment is not confirmable in current state'))).toBeInstanceOf(
-      PaymentStateConflictError,
-    );
+    expect(
+      mapDbError(pgError('55000', 'payment is not confirmable in current state')),
+    ).toBeInstanceOf(PaymentStateConflictError);
   });
 
   it('maps 55000 route ineligible', () => {

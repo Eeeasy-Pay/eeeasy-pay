@@ -67,7 +67,9 @@ describe('RLS and grant paths (anon / authenticated / service_role)', () => {
 
   it('denies anon on product tables and on app_private functions', async () => {
     await expect(
-      withRole('anon', null, (client) => client.query('SELECT count(*) FROM public.payment_intents')),
+      withRole('anon', null, (client) =>
+        client.query('SELECT count(*) FROM public.payment_intents'),
+      ),
     ).rejects.toThrow(/permission denied/);
     await expect(
       withRole('anon', null, (client) =>
@@ -100,9 +102,7 @@ describe('RLS and grant paths (anon / authenticated / service_role)', () => {
     // The granted membership predicate is callable and returns false without membership.
     await expect(
       withRole('authenticated', RLS_A, (client) =>
-        client.query<{ ok: boolean }>(
-          'SELECT app_private.can_read_split_bill(NULL::uuid) AS ok',
-        ),
+        client.query<{ ok: boolean }>('SELECT app_private.can_read_split_bill(NULL::uuid) AS ok'),
       ),
     ).resolves.toMatchObject({ rows: [{ ok: false }] });
   });

@@ -118,9 +118,7 @@ describe('split invite claim (atomic redemption)', () => {
         inviteTokenDigest: share.inviteTokenDigest,
       }),
     ]);
-    const claimed = outcomes.filter(
-      (o) => o.status === 'fulfilled' && o.value === 'claimed',
-    );
+    const claimed = outcomes.filter((o) => o.status === 'fulfilled' && o.value === 'claimed');
     const rejected = outcomes.filter(
       (o) => o.status === 'rejected' && o.reason instanceof InviteUnavailableError,
     );

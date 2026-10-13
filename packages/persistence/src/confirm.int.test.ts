@@ -99,7 +99,9 @@ describe('payment intent + quote repositories', () => {
     expect(quote?.payerDebitMinor).toBe(1001n);
     expect(quote?.recipientAmountMinor).toBe(1000n);
     expect(quote?.bindingDigest).toBe(seeded.bindingDigest);
-    await expect(stores.quotes.findQuoteById(deterministicId('quote', 'missing'))).resolves.toBeNull();
+    await expect(
+      stores.quotes.findQuoteById(deterministicId('quote', 'missing')),
+    ).resolves.toBeNull();
   });
 
   it('rejects attaching a second quote to the same intent', async () => {
@@ -144,10 +146,10 @@ describe('confirm command (atomic, single-threaded)', () => {
 
     // Exactly one append-only UserAuthorized event.
     expect(
-      await count(
-        'FROM public.payment_events WHERE payment_intent_id = $1 AND event_type = $2',
-        [seeded.paymentIntentId, 'UserAuthorized'],
-      ),
+      await count('FROM public.payment_events WHERE payment_intent_id = $1 AND event_type = $2', [
+        seeded.paymentIntentId,
+        'UserAuthorized',
+      ]),
     ).toBe(1);
 
     // The idempotency record reached 'accepted'.
@@ -166,7 +168,9 @@ describe('confirm command (atomic, single-threaded)', () => {
       await count('FROM public.outbox_messages WHERE aggregate_id = $1', [seeded.paymentIntentId]),
     ).toBe(1);
     expect(
-      await count('FROM public.payment_events WHERE payment_intent_id = $1', [seeded.paymentIntentId]),
+      await count('FROM public.payment_events WHERE payment_intent_id = $1', [
+        seeded.paymentIntentId,
+      ]),
     ).toBe(1);
   });
 
@@ -194,9 +198,9 @@ describe('confirm command (atomic, single-threaded)', () => {
       stores.commands.confirmPaymentIntent(confirmCommand(seeded, USER_B, 'confirm-actor')),
     ).rejects.toBeInstanceOf(PaymentIntentNotFoundError);
     // The failed attempt left no idempotency row behind (atomic rollback).
-    expect(
-      await count('FROM public.idempotency_records WHERE actor_user_id = $1', [USER_B]),
-    ).toBe(0);
+    expect(await count('FROM public.idempotency_records WHERE actor_user_id = $1', [USER_B])).toBe(
+      0,
+    );
   });
 
   it('rejects an expired quote without any mutation', async () => {
@@ -245,7 +249,9 @@ describe('confirm command under concurrency', () => {
       await count('FROM public.outbox_messages WHERE aggregate_id = $1', [seeded.paymentIntentId]),
     ).toBe(1);
     expect(
-      await count('FROM public.payment_events WHERE payment_intent_id = $1', [seeded.paymentIntentId]),
+      await count('FROM public.payment_events WHERE payment_intent_id = $1', [
+        seeded.paymentIntentId,
+      ]),
     ).toBe(1);
     const intent = await stores.intents.findOwnedById(seeded.paymentIntentId, USER_A);
     expect(intent?.state).toBe('user_authorized');
@@ -339,10 +345,10 @@ describe('transaction boundary', () => {
       });
     });
     expect(
-      await count(
-        'FROM public.outbox_messages WHERE idempotency_key_sha256 IN ($1, $2)',
-        [Buffer.from(sha256Hex('tx-commit-1'), 'hex'), Buffer.from(sha256Hex('tx-commit-2'), 'hex')],
-      ),
+      await count('FROM public.outbox_messages WHERE idempotency_key_sha256 IN ($1, $2)', [
+        Buffer.from(sha256Hex('tx-commit-1'), 'hex'),
+        Buffer.from(sha256Hex('tx-commit-2'), 'hex'),
+      ]),
     ).toBe(2);
   });
 
