@@ -9,14 +9,17 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
-    "test": "echo 'persistence: implemented in TICKET-004' && exit 0"
+    "test": "vitest run"
   },
   "dependencies": {
     "@eeeasy-pay/domain": "workspace:*",
-    "@eeeasy-pay/ports": "workspace:*"
+    "@eeeasy-pay/pal": "workspace:*",
+    "@eeeasy-pay/ports": "workspace:*",
+    "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
   }
 }

@@ -12,7 +12,9 @@ BEGIN
     CREATE ROLE authenticated NOLOGIN;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
-    CREATE ROLE service_role NOLOGIN;
+    -- Supabase's real service_role carries BYPASSRLS: it is the server-side PAL role and
+    -- reads product rows without being filtered by client-facing policies (TICKET-004 RLS tests).
+    CREATE ROLE service_role NOLOGIN BYPASSRLS;
   END IF;
 END
 $$;
