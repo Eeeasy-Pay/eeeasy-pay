@@ -15,10 +15,11 @@
     "@eeeasy-pay/contracts": "workspace:*",
     "@eeeasy-pay/domain": "workspace:*",
     "@eeeasy-pay/pal": "workspace:*",
-    "@eeeasy-pay/ports": "workspace:*"
+    "@eeeasy-pay/ports": "workspace:*",
+    "@eeeasy-pay/sponsor-dfsp-connector": "workspace:*",
+    "@eeeasy-pay/worker": "workspace:*"
   },
   "devDependencies": {
-    "@eeeasy-pay/sponsor-dfsp-connector": "workspace:*",
     "@types/node": "^22.15.0",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"

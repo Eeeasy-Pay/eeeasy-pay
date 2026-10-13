@@ -4,16 +4,22 @@
 // each transaction trivially atomic here; the Postgres versions must use real
 // transactional boundaries (ADR-006), including durable outbox claiming with leases.
 
-import type { QuoteV1 } from '@eeeasy-pay/contracts';
+import type { QuoteV1, SettlementStateV1 } from '@eeeasy-pay/contracts';
 import type { QuoteBindingTerms } from '@eeeasy-pay/pal';
+import { WORKER_RECONCILIATION_EVENT, WORKER_SUBMISSION_EVENT } from '@eeeasy-pay/ports';
 import type {
   Clock,
   IdempotencyReplay,
   IdempotencyRepository,
   OutboxMessageRecord,
   OutboxRepository,
+  OutboxSubmissionEvidence,
+  PaymentEventAppend,
+  PaymentEventRepository,
   PaymentIntentRecord,
   PaymentIntentRepository,
+  ReconciliationEvidence,
+  SubmissionEvidenceRepository,
   TransactionBoundary,
   UuidGenerator,
 } from '@eeeasy-pay/ports';
@@ -21,6 +27,12 @@ import type {
 export interface IntentRecord extends PaymentIntentRecord {
   readonly createdAt: string;
   readonly updatedAt: string;
+  /**
+   * Separately-tracked settlement dimension (TICKET-006). Absent means 'not_applicable'
+   * (the migrations' default). Only the explicitly simulated settlement stage ever sets
+   * it; a submission ack NEVER implies settlement (GUARDRAILS.md #3).
+   */
+  readonly settlementState?: SettlementStateV1;
 }
 
 export class MemoryIntentStore implements PaymentIntentRepository {
@@ -154,6 +166,11 @@ export class MemoryOutboxRepository implements OutboxRepository {
     private readonly clock: Clock,
   ) {}
 
+  /** Scenario reads (TICKET-006): durable commands ever enqueued on this seam. */
+  messageCount(): number {
+    return this.messages.size;
+  }
+
   async enqueue(input: {
     aggregateType: string;
     aggregateId: string;
@@ -246,7 +263,110 @@ export class MemoryOutboxRepository implements OutboxRepository {
       attempts: message.attempts,
       availableAt,
     });
-    return false;
+    // Mirrors app_private.finish_outbox (migration 202610060003): true whenever the lease
+    // held and the row was updated — including the retry (pending) and dead-letter paths.
+    // The worker counts false as a LOST lease, so the outcome must be reported honestly.
+    return true;
+  }
+}
+
+// Append-only payment event log (TICKET-006 scenario seam) ------------------------
+
+export interface MemoryPaymentEventRecord extends PaymentEventAppend {
+  readonly eventId: string;
+}
+
+/**
+ * In-memory append-only payment event log (TICKET-006). It mirrors the reviewed
+ * persistence behavior: appends are idempotent per (source_system, external_event_id)
+ * — migration 202610060002's partial unique index — and the log is never updated or
+ * deleted. The TICKET-005 worker writes TransferSubmissionRecorded / TransferReconciled
+ * events through the repository port; the scenario projector reads them back.
+ */
+export class MemoryPaymentEventStore
+  implements PaymentEventRepository, SubmissionEvidenceRepository
+{
+  private readonly events: MemoryPaymentEventRecord[] = [];
+
+  constructor(private readonly uuid: UuidGenerator) {}
+
+  async appendEvent(event: PaymentEventAppend): Promise<string> {
+    if (event.externalEventId !== undefined) {
+      const existing = this.events.find(
+        (stored) =>
+          stored.sourceSystem === event.sourceSystem &&
+          stored.externalEventId === event.externalEventId,
+      );
+      if (existing !== undefined) {
+        // Mirrors ON CONFLICT (source_system, external_event_id) DO NOTHING: the same
+        // evidence is never recorded twice.
+        return existing.eventId;
+      }
+    }
+    const eventId = this.uuid.next();
+    this.events.push({ ...event, eventId });
+    return eventId;
+  }
+
+  async findSubmissionByOutboxMessage(
+    paymentIntentId: string,
+    outboxMessageId: string,
+  ): Promise<OutboxSubmissionEvidence | null> {
+    for (let index = this.events.length - 1; index >= 0; index -= 1) {
+      const event = this.events[index];
+      if (
+        event === undefined ||
+        event.eventType !== WORKER_SUBMISSION_EVENT.eventType ||
+        event.sourceSystem !== WORKER_SUBMISSION_EVENT.sourceSystem ||
+        event.paymentIntentId !== paymentIntentId
+      ) {
+        continue;
+      }
+      const metadata = event.safeMetadata as Record<string, unknown>;
+      if (metadata['outbox_message_id'] !== outboxMessageId) {
+        continue;
+      }
+      const externalTransferId = metadata['external_transfer_id'];
+      const outcome = metadata['outcome'];
+      if (typeof externalTransferId !== 'string') {
+        continue;
+      }
+      if (outcome !== 'committed' && outcome !== 'rejected' && outcome !== 'timeout_unknown') {
+        continue;
+      }
+      return { outboxMessageId, externalTransferId, outcome };
+    }
+    return null;
+  }
+
+  async findReconciliationByExternalId(
+    externalTransferId: string,
+  ): Promise<ReconciliationEvidence | null> {
+    for (let index = this.events.length - 1; index >= 0; index -= 1) {
+      const event = this.events[index];
+      if (
+        event === undefined ||
+        event.eventType !== WORKER_RECONCILIATION_EVENT.eventType ||
+        event.sourceSystem !== WORKER_RECONCILIATION_EVENT.sourceSystem
+      ) {
+        continue;
+      }
+      const metadata = event.safeMetadata as Record<string, unknown>;
+      if (metadata['external_transfer_id'] !== externalTransferId) {
+        continue;
+      }
+      const queryStatus = metadata['query_status'];
+      if (queryStatus !== 'committed' && queryStatus !== 'rejected') {
+        continue;
+      }
+      return { externalTransferId, resolvedStatus: queryStatus };
+    }
+    return null;
+  }
+
+  /** Ordered scenario reads (TICKET-006): the full append-only log for one intent. */
+  listForIntent(paymentIntentId: string): readonly MemoryPaymentEventRecord[] {
+    return this.events.filter((event) => event.paymentIntentId === paymentIntentId);
   }
 }
 
