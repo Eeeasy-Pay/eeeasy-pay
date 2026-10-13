@@ -63,10 +63,23 @@ Workflow for every ticket:
   TICKET-006); within the port contract a crash between external submission and the
   evidence append cannot be closed (no external id on our side) — a real adapter closes
   it with a partner-side idempotency key, which the simulator does not model (B-01).
-- **TICKET-006 Simulator scenarios.** Deterministic end-to-end demo fixtures: success,
-  rejection, expiry, duplicate request, ambiguous timeout followed by reconciliation; state
-  labels distinguish `submitted`, `processing`, `unknown/needs reconciliation`,
-  `recipient credited (simulated)`, settlement (simulated).
+- **TICKET-006 Simulator scenarios — ✅ DONE (2026-10-13; the squash-merge message records
+  the verifying CI run).** Deterministic end-to-end demo fixtures: success, rejection,
+  expiry, duplicate request, ambiguous timeout followed by reconciliation; state labels
+  distinguish `submitted`, `processing`, `unknown_needs_reconciliation`,
+  `recipient_credited_simulated`, and `settlement_simulated`. Acceptance met: each scenario
+  drives the real route handlers over loopback HTTP with the real TICKET-005 outbox worker
+  and the deterministic simulator, and its transcript asserts the exact label journey plus
+  the single-submission invariants (one outbox command and one external submission;
+  reconciliation queries the ORIGINAL external id, never a resubmit; duplicate confirms
+  and idempotency-key reuses refused with 409s; expiry refused at command time with no
+  status-read mutation, then projected `expired`). Notes: the settlement dimension is a
+  separate, explicitly-staged simulated stage (a submission ack never implies
+  settlement); the completion projection is gated on SIMULATOR recipient-credit evidence
+  (B-01); apps/api confirm now enqueues the reviewed `submit_payment` command (snake_case
+  safe payload, migration 202610060003) so the in-memory seam emits exactly what the
+  worker consumes, and the in-memory outbox `finish()` mirrors `finish_outbox`'s return
+  contract. The TICKET-007 demo can reuse the exported `runScenario()` transcripts.
 - **TICKET-007 Demo script.** Repeatable local demo (script or README walkthrough) with
   synthetic identities only; verifies the scenario set of TICKET-006 end to end.
 - **TICKET-008 Hardening + evidence.** Commit a verified pnpm lockfile, enable

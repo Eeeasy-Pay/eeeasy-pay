@@ -42,6 +42,7 @@ import type {
   TransactionBoundary,
   UuidGenerator,
 } from '@eeeasy-pay/ports';
+import { SUBMIT_PAYMENT_COMMAND } from '@eeeasy-pay/worker';
 import { bearerSubject, UnauthenticatedError } from './auth.ts';
 import type { IntentRecord, MemoryIntentStore, MemoryQuoteStore } from './memory.ts';
 import { problem } from './problems.ts';
@@ -313,11 +314,15 @@ async function getPaymentStatus(
     await sendProblem(res, 404, 'not_found', 'payment intent not found', correlationId);
     return;
   }
+  // The settlement dimension is tracked separately on the record (TICKET-006): a
+  // submission ack NEVER implies settlement (GUARDRAILS.md #3), and only an explicit
+  // simulated settlement stage ever sets it. Absent means the migrations' default.
+  const settlementState = record.settlementState ?? 'not_applicable';
   const status: PaymentStatusV1 = {
     paymentIntentId: record.paymentIntentId,
     state: record.state,
-    statusLabel: statusLabelFor(record.state, 'not_applicable'),
-    settlementState: 'not_applicable',
+    statusLabel: statusLabelFor(record.state, settlementState),
+    settlementState,
     simulatorNote: SIMULATOR_NOTE,
   };
   await sendJson(res, 200, status);
@@ -371,11 +376,15 @@ async function confirmPaymentIntent(
   }
   const bindingDigest = quoteBindingSha256(stored.binding);
   const commandCorrelationId = deps.uuid.next();
+  // The durable command the TICKET-005 worker consumes. The reviewed contract is the
+  // snake_case `submit_payment` safe payload of app_private.confirm_payment_intent
+  // (migration 202610060003) — the exact shape apps/worker's parseSubmitPaymentPayload
+  // accepts — so the in-memory seam enqueues the identical command.
   const safePayload: Readonly<Record<string, unknown>> = {
-    paymentIntentId: record.paymentIntentId,
-    quoteId: stored.quoteId,
-    quoteBindingDigest: bindingDigest,
-    correlationId: commandCorrelationId,
+    payment_intent_id: record.paymentIntentId,
+    quote_id: stored.quoteId,
+    quote_binding_sha256: bindingDigest,
+    correlation_id: commandCorrelationId,
   };
   // Command transaction (ADR-006): the state transition and the durable outbox enqueue are
   // serialized in ONE unit. The worker (TICKET-005) submits to the sponsor port later.
@@ -385,7 +394,7 @@ async function confirmPaymentIntent(
     await deps.outbox.enqueue({
       aggregateType: 'payment_intent',
       aggregateId: record.paymentIntentId,
-      commandType: 'submit_transfer',
+      commandType: SUBMIT_PAYMENT_COMMAND,
       schemaVersion: 1,
       idempotencyKeyDigest: idempotencyKeyDigest(record.paymentIntentId + '\u0000' + bindingDigest),
       payloadDigest: sha256Hex(canonicalize(safePayload)),

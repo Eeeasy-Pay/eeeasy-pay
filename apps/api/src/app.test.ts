@@ -13,6 +13,7 @@ import {
 import { idempotencyKeyDigest, quoteBindingSha256 } from '@eeeasy-pay/pal';
 import type { Clock, UuidGenerator } from '@eeeasy-pay/ports';
 import { SimulatorSponsorDfspConnector } from '@eeeasy-pay/sponsor-dfsp-connector';
+import { parseSubmitPaymentPayload, SUBMIT_PAYMENT_COMMAND } from '@eeeasy-pay/worker';
 import { createApiApp } from './app.ts';
 import {
   MemoryIdempotencyRepository,
@@ -287,7 +288,7 @@ describe('apps/api payment-intent routes (TICKET-003)', () => {
     );
   });
 
-  it('accepts a confirmation with 202 and enqueues exactly one bound submit_transfer command', async () => {
+  it('accepts a confirmation with 202 and enqueues exactly one bound submit_payment command', async () => {
     const harness = await startHarness();
     const created = PaymentIntentV1Schema.parse(await (await createIntent(harness)).json());
     const response = await harness.call(
@@ -309,7 +310,7 @@ describe('apps/api payment-intent routes (TICKET-003)', () => {
     if (message === undefined) {
       throw new Error('expected one claimed outbox message');
     }
-    expect(message.commandType).toBe('submit_transfer');
+    expect(message.commandType).toBe(SUBMIT_PAYMENT_COMMAND);
     expect(message.aggregateType).toBe('payment_intent');
     expect(message.aggregateId).toBe(created.paymentIntentId);
     expect(message.schemaVersion).toBe(1);
@@ -320,9 +321,16 @@ describe('apps/api payment-intent routes (TICKET-003)', () => {
     }
     const bindingDigest = quoteBindingSha256(stored.binding);
     const safePayload = message.safePayload as Record<string, unknown>;
-    expect(safePayload['quoteBindingDigest']).toBe(bindingDigest);
-    expect(safePayload['paymentIntentId']).toBe(created.paymentIntentId);
-    expect(safePayload['quoteId']).toBe(quoteId);
+    expect(safePayload['payment_intent_id']).toBe(created.paymentIntentId);
+    expect(safePayload['quote_id']).toBe(quoteId);
+    expect(safePayload['quote_binding_sha256']).toBe(bindingDigest);
+    // The command must be consumable by the TICKET-005 worker: the reviewed wire shape is
+    // the snake_case submit_payment payload (app_private.confirm_payment_intent).
+    const parsed = parseSubmitPaymentPayload(message.safePayload);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.paymentIntentId).toBe(created.paymentIntentId);
+    expect(parsed?.quoteId).toBe(quoteId);
+    expect(parsed?.quoteBindingDigest).toBe(bindingDigest);
     expect(message.idempotencyKeyDigest).toBe(
       idempotencyKeyDigest(created.paymentIntentId + '\u0000' + bindingDigest),
     );
