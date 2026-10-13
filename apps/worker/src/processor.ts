@@ -187,9 +187,13 @@ export class OutboxWorker {
         message.outboxMessageId,
       );
       if (prior) {
-        return this.reconcilePriorSubmission(message, payload, prior.externalTransferId);
+        // `return await`, not a bare return: a helper rejection must be observed
+        // inside this try/catch. A bare `return promise` skips the catch block, so
+        // repository failures could never reach the processor_error retry path.
+        return await this.reconcilePriorSubmission(message, payload, prior.externalTransferId);
       }
-      return this.submitNew(message, payload);
+      // Same reasoning as above: the catch path depends on observing this rejection.
+      return await this.submitNew(message, payload);
     } catch {
       // Evidence read or repository failure before any external submission happened.
       return this.finish(message, false, this.retryAt(message), 'processor_error');
