@@ -19,8 +19,8 @@ Read `docs/implementation/GUARDRAILS.md` before contributing.
 
 ## Repository layout
 
-- `apps/api` - product HTTP API (payment-intent routes landed in TICKET-003; split routes follow as a follow-up on top of the TICKET-004 repositories) + versioned OpenAPI contract (`openapi/v1.yaml`, TICKET-002)
-- `apps/worker` - restart-safe outbox processing and inbox ingest (landed in TICKET-005; event projection follows in TICKET-006)
+- `apps/api` - product HTTP API (payment-intent routes landed in TICKET-003; split routes follow as a follow-up on top of the TICKET-004 repositories) + versioned OpenAPI contract (`openapi/v1.yaml`, TICKET-002) + deterministic end-to-end simulator scenario fixtures with status-label projection (TICKET-006)
+- `apps/worker` - restart-safe outbox processing and inbox ingest (landed in TICKET-005); scenario projection over worker evidence landed in TICKET-006 (`apps/api/src/projector.ts`)
 - `packages/domain` - pure payment-state transitions, exact minor-unit money, deterministic splits
 - `packages/contracts` - zod-first V1 schemas, closed problem codes, mirrored into the OpenAPI wire contract (TICKET-002)
 - `packages/ports` - typed repository, clock, notification, and sponsor-DFSP connector interfaces
