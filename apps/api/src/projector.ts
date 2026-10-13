@@ -98,10 +98,7 @@ export function readScenarioFacts(events: readonly MemoryPaymentEventRecord[]): 
  * The legal state path from the current state to the evidence-implied outcome, or null
  * when the evidence does not move this intent.
  */
-function projectionPath(
-  state: PaymentState,
-  facts: ScenarioFacts,
-): readonly PaymentState[] | null {
+function projectionPath(state: PaymentState, facts: ScenarioFacts): readonly PaymentState[] | null {
   if (facts.reconciliation !== null) {
     if (state === 'user_authorized') {
       // The projection step was skipped while the worker reconciled (e.g. a crash):
@@ -163,9 +160,7 @@ export async function projectIntentState(
   const nowIso = deps.clock.nowIso();
   if (record.state === 'quoted') {
     const stored =
-      record.currentQuoteId === undefined
-        ? null
-        : deps.quotes.findByQuoteId(record.currentQuoteId);
+      record.currentQuoteId === undefined ? null : deps.quotes.findByQuoteId(record.currentQuoteId);
     if (
       stored !== null &&
       projectQuoteStatus(stored.quote.expiresAt, nowIso).quoteStatus === 'expired'
@@ -195,8 +190,7 @@ export async function projectIntentState(
     const evidence: CompletionEvidence = {
       source: 'SIMULATOR',
       recipientCreditState: 'credited',
-      reference:
-        facts.reconciliation?.evidenceRef ?? facts.submission?.externalTransferId ?? '',
+      reference: facts.reconciliation?.evidenceRef ?? facts.submission?.externalTransferId ?? '',
       recordedAt: facts.reconciliation?.occurredAt ?? facts.submission?.occurredAt ?? nowIso,
     };
     assertCompletable('completed', evidence);

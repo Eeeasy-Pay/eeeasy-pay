@@ -280,10 +280,7 @@ async function snapshotStatus(
   harness: ScenarioHarness,
   paymentIntentId: string,
 ): Promise<PaymentStatusV1> {
-  const response = await harness.call(
-    'GET',
-    '/v1/payment-intents/' + paymentIntentId + '/status',
-  );
+  const response = await harness.call('GET', '/v1/payment-intents/' + paymentIntentId + '/status');
   if (response.status !== 200) {
     throw new Error('scenario status read failed with HTTP ' + String(response.status));
   }
@@ -533,8 +530,7 @@ async function runDuplicateRequestScenario(
   const duplicateConfirm = await harness.call('POST', confirmPath(paymentIntentId));
   if (duplicateConfirm.status !== 409) {
     throw new Error(
-      'the duplicate confirm must be refused with 409, got HTTP ' +
-        String(duplicateConfirm.status),
+      'the duplicate confirm must be refused with 409, got HTTP ' + String(duplicateConfirm.status),
     );
   }
   const duplicateProblem = ProblemDetailSchema.parse(await duplicateConfirm.json());
@@ -592,8 +588,7 @@ async function runAmbiguousTimeoutScenario(
   const firstBatch = await harness.worker.runBatch();
   if (firstBatch.claimed !== 1 || firstBatch.pendingRetry !== 1) {
     throw new Error(
-      'ambiguous scenario expected one claim scheduled for retry: ' +
-        JSON.stringify(firstBatch),
+      'ambiguous scenario expected one claim scheduled for retry: ' + JSON.stringify(firstBatch),
     );
   }
   await expectProjected(harness, paymentIntentId, 'unknown_reconciliation');
