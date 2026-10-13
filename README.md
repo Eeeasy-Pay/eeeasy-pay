@@ -19,13 +19,13 @@ Read `docs/implementation/GUARDRAILS.md` before contributing.
 
 ## Repository layout
 
-- `apps/api` - product HTTP API (payment-intent routes landed in TICKET-003; split routes with TICKET-004) + versioned OpenAPI contract (`openapi/v1.yaml`, TICKET-002)
+- `apps/api` - product HTTP API (payment-intent routes landed in TICKET-003; split routes land with TICKET-012) + versioned OpenAPI contract (`openapi/v1.yaml`, TICKET-002)
 - `apps/worker` - restart-safe outbox processing and inbox projection (TICKET-005)
 - `packages/domain` - pure payment-state transitions, exact minor-unit money, deterministic splits
 - `packages/contracts` - zod-first V1 schemas, closed problem codes, mirrored into the OpenAPI wire contract (TICKET-002)
 - `packages/ports` - typed repository, clock, notification, and sponsor-DFSP connector interfaces
 - `packages/pal` - quote binding, idempotency fingerprints, expiry projection, event/state mapping
-- `packages/persistence` - narrow repository/transaction implementations (TICKET-004)
+- `packages/persistence` - Postgres repository/transaction implementations over the reviewed migrations (TICKET-004; integration tests run in the dedicated `persistence-tests` CI job)
 - `packages/sponsor-dfsp-connector` - deterministic simulator only; no live connector
 - `infra/mojaloop` - operator-owned central Hub release inputs (TICKETS 009-010; reference only)
 - `supabase/migrations` - reviewed ordered SQL (Postgres; Supabase-compatible roles/RLS)
@@ -53,6 +53,9 @@ psql -f ci/db/prepare.sql                 # synthetic auth schema + roles (CI/lo
 for f in $(ls supabase/migrations/*.sql | sort); do psql -v ON_ERROR_STOP=1 -f "$f"; done
 psql -v ON_ERROR_STOP=1 -f ci/db/smoke.sql
 ```
+
+The `packages/persistence` integration tests also need `DATABASE_URL`
+(e.g. `postgres://postgres:postgres@127.0.0.1:5432/eeeasy_pay`) and skip without it.
 
 ## Status
 

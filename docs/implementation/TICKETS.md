@@ -32,12 +32,21 @@ Workflow for every ticket:
   duplicate-replay, and key-conflict cases tested; no product state mutation in GET.
   Implementation notes: repositories are in-memory ports-shaped seams (TICKET-004
   swaps in Postgres over the reviewed migrations); bearer auth is structure-only
-  (B-01); split-bill routes land with TICKET-004; the outbox worker is TICKET-005.
-- **TICKET-004 packages/persistence.** Implement narrow Postgres repositories and
+  (B-01); split-bill routes land with TICKET-012 (apps/api ↔ persistence wiring);
+  the outbox worker is TICKET-005.
+- **TICKET-004 packages/persistence — ✅ DONE (2026-10-13; the squash-merge message
+  records the verifying CI run).** Implement narrow Postgres repositories and
   transaction boundaries over the reviewed migrations: payment intents, quotes,
   idempotency, events, outbox claim/finish, inbox ingest, split claim. Acceptance:
   concurrency tests prove single durable outbox command per confirmation and no duplicate
   effects; RLS/grant paths tested for anon/authenticated/service roles.
+  Implementation notes: postgres.js driver with bigint parsed as JS bigint (digests are
+  hex at the port boundary, bytea in storage); `PostgresTransactions` joins nested
+  `run()` calls into the ambient transaction (ADR-006); the suites skip without
+  `DATABASE_URL` and a dedicated `persistence-tests` CI job (Postgres 16 + prepare.sql +
+  migrations) runs them; `ci/db/prepare.sql` now creates `service_role` with BYPASSRLS
+  like Supabase's real server-side role (CI fixture fidelity fix; migrations untouched);
+  apps/api wiring to these repositories and the split HTTP routes moved to TICKET-012.
 - **TICKET-005 apps/worker.** Restart-safe outbox processor using lease-based claiming,
   simulator connector only, explicit `timeout_unknown` handling (query original external
   ID; never re-submit with a new ID), inbox dedupe + hash-conflict quarantine, crash/restart
@@ -56,6 +65,14 @@ Workflow for every ticket:
   committed arrived Prettier-reformatted via the reverted PR #4 and left with it);
   commit a freshly generated, unformatted lockfile and keep it excluded from
   formatting.
+- **TICKET-012 apps/api ↔ persistence wiring + split routes.** Swap apps/api's in-memory
+  seams for the TICKET-004 Postgres repositories behind the existing `@eeeasy-pay/ports`
+  interfaces, and implement the four split routes from `apps/api/openapi/v1.yaml`
+  (`POST /v1/split-bills`, `GET /v1/split-bills/{splitBillId}`,
+  `GET /v1/split-bills/{splitBillId}/shares`, `POST /v1/split-shares/claim-invite`) on top
+  of the split repository. Acceptance: the TICKET-003 route suite still passes unchanged
+  against the Postgres-backed app; split create/open/claim flows validated against the
+  zod contracts; no route mutates state on GET.
 
 ## Operator workstream (PRD v1.2 rebaseline, D-08/D-09)
 

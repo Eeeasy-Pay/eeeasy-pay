@@ -192,4 +192,17 @@ jobs:
           done
           echo "All migrations applied in order." >> "$GITHUB_STEP_SUMMARY"
       - name: Persistence integration tests (TICKET-004 acceptance)
-        run: pnpm --filter @eeeasy-pay/persistence test
+        run: |
+          set -o pipefail
+          if ! pnpm --filter @eeeasy-pay/persistence test > /tmp/persistence.log 2>&1; then
+            echo "persistence tests failed; vitest tail emitted as error annotations"
+            tail -c 7000 /tmp/persistence.log \
+              | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' -e 's/\r//g' \
+              | tr '\n' '@' | fold -w 690 | head -10 > /tmp/persistence-chunks.txt
+            i=0
+            while IFS= read -r chunk; do
+              i=$((i + 1))
+              echo "::error title=Persistence tests failed (part ${i})::${chunk}"
+            done < /tmp/persistence-chunks.txt
+            exit 1
+          fi
