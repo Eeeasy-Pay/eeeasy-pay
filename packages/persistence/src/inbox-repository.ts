@@ -1,4 +1,4 @@
-import type { InboxRepository } from '@eeeasy-pay/ports';
+import type { InboxLifecycleRepository, InboxRepository } from '@eeeasy-pay/ports';
 import type { Db } from './db.ts';
 import { mapDbErrorAsync } from './errors.ts';
 import { hexToBuffer } from './hex.ts';
@@ -12,7 +12,7 @@ import { hexToBuffer } from './hex.ts';
  * so an existence pre-check sets the replayed flag; the unique constraint keeps the
  * ingest itself race-safe regardless of what the pre-check observed.
  */
-export class PostgresInboxRepository implements InboxRepository {
+export class PostgresInboxRepository implements InboxRepository, InboxLifecycleRepository {
   constructor(private readonly db: Db) {}
 
   async ingest(event: {
@@ -50,5 +50,27 @@ export class PostgresInboxRepository implements InboxRepository {
       }
       return { inboxEventId: row.id, replayed: existing.rows.length > 0 };
     });
+  }
+
+  async markProcessed(inboxEventId: string): Promise<boolean> {
+    const result = await this.db.query(
+      `UPDATE public.inbox_events
+          SET state = 'processed', processed_at = clock_timestamp()
+        WHERE inbox_event_id = $1 AND state <> 'processed'`,
+      [inboxEventId],
+    );
+    return result.rowCount === 1;
+  }
+
+  async quarantine(providerKey: string, providerEventId: string): Promise<boolean> {
+    // The table CHECK pairs processed_at with the processed state, so a previously
+    // processed event that is later quarantined must also clear processed_at.
+    const result = await this.db.query(
+      `UPDATE public.inbox_events
+          SET state = 'quarantined', processed_at = NULL
+        WHERE provider_key = $1 AND provider_event_id = $2 AND state <> 'quarantined'`,
+      [providerKey, providerEventId],
+    );
+    return result.rowCount === 1;
   }
 }

@@ -321,6 +321,68 @@ export interface SplitInviteClaimPort {
   }): Promise<'claimed' | 'already_claimed'>;
 }
 
+// Worker outbox/inbox processing (TICKET-005) ------------------------------------
+
+/**
+ * Event naming contract shared by apps/worker (writes) and packages/persistence
+ * (reconciliation reads). External event ids are unique per source_system
+ * (migration 202610060002), so these pairs also make the appends idempotent.
+ */
+export const WORKER_SUBMISSION_EVENT = {
+  eventType: 'TransferSubmissionRecorded',
+  sourceSystem: 'worker-submission',
+} as const;
+
+export const WORKER_RECONCILIATION_EVENT = {
+  eventType: 'TransferReconciled',
+  sourceSystem: 'worker-reconciliation',
+} as const;
+
+/** A recorded external transfer submission for an outbox message (append-only log read). */
+export interface OutboxSubmissionEvidence {
+  readonly outboxMessageId: string;
+  readonly externalTransferId: string;
+  readonly outcome: 'committed' | 'rejected' | 'timeout_unknown';
+}
+
+/** A completed reconciliation of an ambiguous submission (query of the ORIGINAL external id). */
+export interface ReconciliationEvidence {
+  readonly externalTransferId: string;
+  readonly resolvedStatus: 'committed' | 'rejected';
+}
+
+/**
+ * Reads the append-only payment event log for worker submission and reconciliation
+ * records, so the outbox worker can reconcile the ORIGINAL external id after a
+ * timeout_unknown outcome or a crash between submission and completion (ADR-006).
+ */
+export interface SubmissionEvidenceRepository {
+  /** Latest submission recorded for this outbox message, or null when none was recorded. */
+  findSubmissionByOutboxMessage(
+    paymentIntentId: string,
+    outboxMessageId: string,
+  ): Promise<OutboxSubmissionEvidence | null>;
+  /** Completed reconciliation for this external id, or null when it is still ambiguous. */
+  findReconciliationByExternalId(
+    externalTransferId: string,
+  ): Promise<ReconciliationEvidence | null>;
+}
+
+/**
+ * Inbox lifecycle for the trusted worker. Both writes are the granted service_role
+ * UPDATE path on inbox_events (migration 202610060003); the mobile app never sees it
+ * (GUARDRAILS.md #5).
+ */
+export interface InboxLifecycleRepository {
+  /** Marks a deduplicated, ingested event processed (pairs state with processed_at). */
+  markProcessed(inboxEventId: string): Promise<boolean>;
+  /**
+   * Quarantines the stored event whose (provider key, event id) was redelivered with a
+   * changed payload hash (ADR-006). Idempotent: returns false when already quarantined.
+   */
+  quarantine(providerKey: string, providerEventId: string): Promise<boolean>;
+}
+
 // Typed command errors, mapped from database SQLSTATEs by packages/persistence ------
 
 export class IdempotencyConflictError extends Error {
