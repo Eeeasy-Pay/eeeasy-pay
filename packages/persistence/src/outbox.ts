@@ -101,4 +101,3 @@ export class PostgresOutboxRepository implements OutboxRepository {
     return rows[0]?.ok === true;
   }
 }
-

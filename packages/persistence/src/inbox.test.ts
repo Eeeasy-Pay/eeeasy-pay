@@ -71,9 +71,7 @@ describe.skipIf(!databaseUrl)('inbox persistence', () => {
       ingestEvent('evt-3', digest),
     ]);
     expect(settled.every((s) => s.status === 'fulfilled')).toBe(true);
-    const ids = settled.flatMap((s) =>
-      s.status === 'fulfilled' ? [s.value.inboxEventId] : [],
-    );
+    const ids = settled.flatMap((s) => (s.status === 'fulfilled' ? [s.value.inboxEventId] : []));
     expect(new Set(ids).size).toBe(1);
     expect(await countRows(h, 'inbox_events')).toBe(1);
   });
@@ -97,4 +95,3 @@ describe.skipIf(!databaseUrl)('inbox persistence', () => {
     expect(rows[0]?.payment_intent_id).toBe(quoted.intentId);
   });
 });
-

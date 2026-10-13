@@ -198,4 +198,3 @@ export class PostgresSplitRepository {
     return row ? toShare(row) : null;
   }
 }
-

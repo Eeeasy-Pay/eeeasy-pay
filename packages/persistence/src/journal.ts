@@ -63,4 +63,3 @@ export class PostgresJournalRepository {
     return { journalTransactionId: id, replayed: existing.length > 0 };
   }
 }
-

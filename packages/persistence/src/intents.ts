@@ -305,4 +305,3 @@ export class PostgresPaymentIntentRepository implements PaymentIntentRepository 
     return id;
   }
 }
-

@@ -44,4 +44,3 @@ export class PostgresInboxRepository implements InboxRepository {
     return { inboxEventId: id, replayed: existing.length > 0 };
   }
 }
-
